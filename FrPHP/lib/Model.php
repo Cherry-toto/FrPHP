@@ -175,7 +175,7 @@ class Model {
 	
 	//执行 SQL 语句，返回PDOStatement对象,可以理解为结果集
 	public function query($sql){
-		return $this->db->query();
+		return $this->db->query($sql);
 	}
 	//执行SQL语句返回影响行数
 	public function runSql($sql)
