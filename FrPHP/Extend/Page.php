@@ -35,7 +35,7 @@ namespace FrPHP\Extend;
 		//系统分页链接
 		public $url = '';
 		//分页分隔符
-		public $sep = '/page/';
+		public $sep = '?page=';
 		//SQL
 		public $sql = null;
 		//排序
@@ -49,7 +49,7 @@ namespace FrPHP\Extend;
 		//分页url设置
 		public $typeurl = '';
 		//是否需要后缀File_TXT
-		public $file_ext = File_TXT;
+		public $file_ext = '';
 		
 		
 		
@@ -63,61 +63,18 @@ namespace FrPHP\Extend;
 		
 		
 		public function getUrl(){
-			$request_uri = $_SERVER["REQUEST_URI"];    
-            if(strpos($request_uri,APP_URL)!==false){
-				//后台
-				$this->file_ext = '';
-				$this->sep = '?page=';
-				if(isset($_GET['page'])){
-					unset($_GET['page']);
-				}
-				$url = get_domain().APP_URL.'/'.APP_CONTROLLER.'/'.APP_ACTION;
-				if(count($_GET)>0){
-					$this->sep = '&page=';
-					$url = get_domain().APP_URL.'/'.APP_CONTROLLER.'/'.APP_ACTION.'?'.http_build_query($_GET);
-				}
-			}else{
-				//$url = str_ireplace('.html','',$request_uri);
-				//$position = strpos($url, '-');
-				//$url = $position === false ? $url : substr($url, 0, $position);
-				
-				switch($this->typeurl){
-					case 'screen':
-						//$url = str_ireplace('.html','',$request_uri);
-					$url = get_domain().'/screen-'.$_GET['molds'].'-'.$_GET['tid'].'-'.$_GET['jz_screen']; 
-						if(strpos($url,'page')!==false){
-							$urls = explode('-page-',$url);
-							$url = $urls[0];
-						}
-					break;
-					case 'tpl':
-						$this->file_ext = '';
-						$url = str_ireplace('.html','',$request_uri);
-						if(strpos($url,'?')!==false){
-							$urls = explode('?',$url);
-							$url = $urls[0];
-						}
-						
-					break;
-					case 'search':
-						$param = $_REQUEST;
-						if(isset($param['page'])){
-							unset($param['page']);
-						}
-						
-						$url = get_domain().'/search?'.http_build_query($param);
-						
-					break;
-					default:
-						$url = str_ireplace('.html','',$request_uri);
-						
-					
-					break;
-					
-				}
-				
-				
+			$request_uri = $_SERVER["REQUEST_URI"];
+			if(isset($_GET['page'])){
+				unset($_GET['page']);
 			}
+
+			$appurl = APP_URL=='/index.php' ? '' : APP_URL;
+			$url = get_domain().$appurl.'/'.APP_CONTROLLER.'/'.APP_ACTION;
+			if(count($_GET)>0){
+				$this->sep = str_replace('?','&',$this->sep);
+				$url = get_domain().$appurl.'/'.APP_CONTROLLER.'/'.APP_ACTION.'?'.http_build_query($_GET);
+			}
+			
 			return $url;
             
 		}
