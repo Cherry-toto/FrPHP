@@ -9,6 +9,9 @@
 3.封装sqlite及MySQL两种数据库连接  
 4.增删查改简单数据库操作  
 5.扩展性强  
+### 使用demo演示
+[在线演示](http://frphp.jizhicms.cn/)  
+[下载demo](http://frphp.jizhicms.cn/demo-frphp.zip)
 ### 版权声明
 MIT
 未经版权所有者明确授权，禁止发行本文档及其被实质上修改的版本。 
