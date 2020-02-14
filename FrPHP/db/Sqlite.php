@@ -32,11 +32,11 @@ class Sqlite {
             try {
                 $this->pdo = new PDO('sqlite:'.$sqlite); 
             } catch (PDOException $e) {
-                exit('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />数据库无法链接，如果您是第一次使用，请先执行<a href="/install/">安装程序</a><br /><br /><a href="http://jizhicms.com" target="_blank">极致CMS建站程序 jizhicms.com</a>');
+                exit('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />数据库无法链接，如果您是第一次使用，请先配置数据库！');
             }
             
         }else{ 
-            exit('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />数据库无法链接，如果您是第一次使用，请先执行<a href="/install/">安装程序</a><br /><br /><a href="http://jizhicms.com" target="_blank">极致CMS建站程序 jizhicms.com</a>');
+            exit('<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />数据库无法链接，如果您是第一次使用，请先配置数据库！');
 
         } 
 
