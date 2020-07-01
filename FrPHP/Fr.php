@@ -17,7 +17,7 @@ namespace FrPHP;
 defined('CORE_PATH') or define('CORE_PATH', __DIR__);
 
 // 内核版本信息
-const FrPHP_VERSION     =   '2.1';
+const FrPHP_VERSION     =   '3';
 
 /**
  * FrPHP框架核心
@@ -185,7 +185,7 @@ class FrPHP
 			$open_url_route = [];
 			
 		}
-		
+		$url = format_param($url,1);
 		define('REQUEST_URI',$url);
         $controllerName = DefaultController;
         $actionName = DefaultAction;
@@ -309,11 +309,11 @@ class FrPHP
     public function setReporting()
     {
      
-        if (APP_DEBUG === true) {
-            error_reporting(E_ALL);
+        if(APP_DEBUG === true) {
+			error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
             ini_set('display_errors','On');
         } else {
-            error_reporting(E_ALL);
+            error_reporting(0);
             ini_set('display_errors','Off');
             ini_set('log_errors', 'On');
         }

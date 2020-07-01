@@ -59,8 +59,11 @@ class Sqlite {
         }else{
             $msg = $this->pdo->errorInfo();
             if($msg[2]){
-                Error_msg('数据库错误：' . $msg[2] . end($this->arrSql));
+                $log_name = date('Y-m-d-H-i-s-').time();
+				register_log('数据库错误：' . $msg[2] . end($this->arrSql),$log_name);
+				exit;
             }
+			
         }
     }
     
@@ -85,7 +88,12 @@ class Sqlite {
         
         if(!$n){
             $msg = $this->pdo->errorInfo();
-            if($msg[2]) Error_msg('数据库错误：' . $msg[2] . end($this->arrSql));
+            if($msg[2]){
+				$log_name = date('Y-m-d-H-i-s-').time();
+				register_log('数据库错误：' . $msg[2] . end($this->arrSql),$log_name);
+				exit;
+				
+			} 
         }
         return $n;
     }
@@ -100,7 +108,11 @@ class Sqlite {
         $stmt = $this->getArray("pragma table_info({$table})");
         if(!$stmt){
             $msg = $this->pdo->errorInfo();
-            if($msg[2]) Error_msg('数据库错误：' . $msg[2] . end($this->arrSql));
+            if($msg[2]){
+				$log_name = date('Y-m-d-H-i-s-').time();
+				register_log('数据库错误：' . $msg[2] . end($this->arrSql),$log_name);
+				exit;
+			}
         }
         $rows=array();
         foreach ($stmt as $key => $value) {

@@ -13,7 +13,6 @@
 
 namespace FrPHP\lib;
 use FrPHP\db\DBholder;
-use FrPHP\db\Sqlite;
 use PDO;
 class Model {
 	protected $model;
@@ -23,12 +22,7 @@ class Model {
 	private static $instance=false;//不支持单例模式
 	
 	public function __construct(){
-		if(DB_TYPE=='mysql'){
-			$this->db = DBholder::getInstance();
-		}else if(DB_TYPE=='sqlite'){
-			$this->db = Sqlite::getInstance();
-		}
-		
+		$this->db = DBholder::getInstance();
 	}
 	
 	public static function getInstance($table=null){
@@ -112,6 +106,7 @@ class Model {
 			}else{
 				$vals[] = "{$key} = null";
 			}
+			
 		}
 		$values = join(", ",$vals);
 		$table = self::$table;
@@ -143,7 +138,12 @@ class Model {
          if($order!=null)$where .= " ORDER BY  ".$order;
       }
 		
-		if(!empty($limit))$where .= " LIMIT {$limit}";
+		if(!empty($limit)){
+			if(strpos($limit,',')===false){
+				$limit = ($limit<=0) ? 1 : $limit;
+			}
+			$where .= " LIMIT {$limit}";
+		}
 		$fields = empty($fields) ? "*" : $fields;
 		$table = self::$table;
 		$sql = "SELECT {$fields} FROM {$table} {$where}";
@@ -175,7 +175,7 @@ class Model {
 	
 	//执行 SQL 语句，返回PDOStatement对象,可以理解为结果集
 	public function query($sql){
-		return $this->db->query($sql);
+		return $this->db->query();
 	}
 	//执行SQL语句返回影响行数
 	public function runSql($sql)
@@ -215,14 +215,15 @@ class Model {
 		$row = $this->__prepera_format($row);
 		if(empty($row))return FALSE;
 		foreach($row as $key => $value){
-			$cols[] = $key;
-			$vals[] = '\''.$value.'\'';
+			if($value!==null){
+				$cols[] = $key;
+				$vals[] = '\''.$value.'\'';
+			}
 		}
 		$col = join(',', $cols);
 		$val = join(',', $vals);
 		$table = self::$table;
 		$sql = "INSERT INTO {$table} ({$col}) VALUES ({$val})";
-
 		if( FALSE != $this->runSql($sql) ){
 			if( $newinserid = $this->db->lastInsertId() ){
 				return $newinserid;
@@ -231,7 +232,6 @@ class Model {
 				return array_pop($a);
 			}
 		}
-
 		return FALSE;
     }
 
@@ -239,49 +239,36 @@ class Model {
 	private function __prepera_format($rows)
 	{
 		$table = self::$table;
-		$stmt = $this->db->getTable($table);
-		switch (DB_TYPE) {
-		  	case 'mysql':
-		  		$stmt->execute();  
-				$columns = $stmt->fetchAll(PDO::FETCH_CLASS);
-				$newcol = array();
-				foreach ($columns as $key => $value) {
-					$field = strtolower($value->Field);
-					if(stripos($value->Type,'int')!==false || stripos($value->Type,'decimal')!==false){
-						
-						if(isset($rows[$field])){
-							if($rows[$field]!=='' && $rows[$field]!==false){
-								$newcol[$field] = $rows[$field];
-							}else{
-								$newcol[$field] = 0;
-							}
-						}
-						
+		$stmt = $this->db->getTable($table);  
+		$stmt->execute();  
+		$columns = $stmt->fetchAll(PDO::FETCH_CLASS);
+		$newcol = array();
+		foreach ($columns as $key => $value) {
+			$field = strtolower($value->Field);
+			if(stripos($value->Type,'int')!==false || stripos($value->Type,'decimal')!==false){
+				
+				if(isset($rows[$field])){
+					if($rows[$field]!=='' && $rows[$field]!==false){
+						$newcol[$field] = $rows[$field];
 					}else{
-						if(isset($rows[$field])){
-							if($rows[$field]!=='' && $rows[$field]!==false ){
-								$newcol[$field] = $rows[$field];
-							}else{
-								$newcol[$field] = null;
-							}
-						}
-						
-						
+						$newcol[$field] = 0;
 					}
 				}
-		  		break;
-		  	case 'sqlite':
-		  		$columns = $stmt;
-		  		$newcol = array_intersect_key($rows,$columns);
-		  		
 				
-		  		break;
-		  	default:
-		  		# code...
-		  		break;
-		  }  
-		
+			}else{
+				if(isset($rows[$field])){
+					if($rows[$field]!=='' && $rows[$field]!==false ){
+						$newcol[$field] = $rows[$field];
+					}else{
+						$newcol[$field] = null;
+					}
+				}
+				
+				
+			}
+		}
 		return $newcol;
+		//return array_intersect_key($rows,$newcol);
 	}
 	
 	

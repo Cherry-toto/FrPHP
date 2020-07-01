@@ -124,14 +124,14 @@ class View
 		preg_match_all('/\{foreach(.*?)\}/si',$content,$i);
 		$this->check_template_err(substr_count($content, '{/foreach}'),count($i[0]),'foreach');
 		foreach($i[0] as $k=>$v){
-			$content=str_ireplace($v,'<?php foreach('.$i[1][$k].'){ ?>',$content);
+			$content=str_ireplace($v,$this->template_html_foreach(strtolower($i[1][$k])),$content);
 		}
 		$content=str_ireplace('{/foreach}','<?php } ?>',$content);
 		//screen标签
 		preg_match_all('/\{screen (.*?)\}/si',$content,$i);
 		$this->check_template_err(substr_count($content, '{/screen}'),count($i[0]),'screen');
 		foreach($i[0] as $k=>$v){
-			$content=str_ireplace($v,$this->check_template_screen(strtolower($i[1][$k])),$content);
+			$content=str_ireplace($v,$this->template_html_screen(strtolower($i[1][$k])),$content);
 		}
 		$content=str_ireplace('{/screen}','<?php } ?>',$content);
 		//for循环
@@ -208,7 +208,7 @@ class View
 		输出参数：筛选列表all(item)，链接url，升降序(id,orders,addtime)
 		{screen molds="article" orderby="orders desc" tid="1|2" fields='pingpai,yanse' as="v"}
 	**/
-	public function check_template_screen($f){
+	public function template_html_screen($f){
 		preg_match_all('/.*?(\s*.*?=.*?[\"|\'].*?[\"|\']\s).*?/si',' '.$f.' ',$aa);
 		$a=array();
 		foreach($aa[1] as $v){
@@ -216,7 +216,7 @@ class View
 			$a=array_merge($a,array(trim($t[0]) => trim($t[1])));
 		}
 		if(strpos($a['molds'],'$')!==FALSE){
-			$a['molds']='".'.$a['molds'].'."';
+			$a['molds']='\'".'.$a['molds'].'."\'';
 		}else{
 			$a['molds'] = " '".$a['molds']."' ";
 		}
@@ -274,7 +274,21 @@ class View
 		return $txt;
 	}
 	
-	
+	//foreach全局标签
+	/**
+	$content=str_ireplace($v,'<?php foreach('.$i[1][$k].'){  ?>',$content);
+	*/
+	private function template_html_foreach($f){
+		$ff = explode(' as ',$f);
+		if(strpos($ff[1],'=>')!==false){
+			$fff = explode('=>',$ff[1]);
+			$fff[1] = trim($fff[1]);
+			return '<?php '.$fff[1].'_n=0;foreach('.$f.'){ '.$fff[1].'_n++; ?>';
+		}else{
+			$ff[1] = trim($ff[1]);
+			return '<?php '.$ff[1].'_n=0;foreach('.$f.'){ '.$ff[1].'_n++;?>';
+		}
+	}
 	
 	//loop全局标签
 	private function template_html_loop($f){
@@ -286,7 +300,7 @@ class View
 		}else{
 			if(!isset($a['tid'])){ exit('缺少table参数！');}
 			if(strpos($a['tid'],'$')!==false){
-				$db = ' $classtypedata["'.trim($a['tid'],"'").'"]["molds"] ';
+				$db = ' $classtypedata['.trim($a['tid'],"'").']["molds"] ';
 			}else{
 				if(strpos($a['tid'],',')!==false){
 					$tids = explode(',',$a['tid']);
@@ -304,8 +318,11 @@ class View
 		if(isset($a['isall'])){$isall=trim($a['isall'],"'");}else{$isall=false;}
 		if(isset($a['as'])){$as=$a['as'];}else{$as='v';}
 		if(isset($a['day'])){$day=$a['day'];}else{$day=false;}
+		if(isset($a['jzpage'])){$jzpage=trim($a['jzpage'],"'");}else{$jzpage='page';}
+		if(isset($a['sql'])){$sql=trim($a['sql'],"'");}else{$sql='';}
 		if(isset($a['orderby'])){
 			$order=$a['orderby'];
+			if(strpos($a['orderby'],'$')!==FALSE){$order=trim($a['orderby'],"'");}
 			//$order=' '.str_replace('|',' ',$order).' ';
 		}else{$order="' id desc '";}
 		if(isset($a['like'])){
@@ -348,8 +365,23 @@ class View
 				
 			}
 		}
-		
-		unset($a['table']);unset($a['orderby']);unset($a['limit']);unset($a['as']);unset($a['like']);unset($a['fields']);unset($a['isall']);unset($a['notin']);unset($a['notempty']);unset($a['empty']);unset($a['day']);
+		//在某个参数范围内
+		$in_sql = '';
+		if(isset($a['in'])){
+			if(strpos($a['in'],'|')!==false){
+				$in = explode('|',trim($a['in'],"'"));
+				if(strpos($in[1],'$')!==false){
+					$in_sql = ' and '.$in[0].' in(\'.'.$in[1].'.\') ';
+				}else{
+					$in_sql = ' and '.$in[0].' in('.$in[1].') ';
+				}
+				
+			}
+		}
+		if($sql){
+			$sql = " and '.".$sql.".'";
+		}
+		unset($a['table']);unset($a['orderby']);unset($a['limit']);unset($a['as']);unset($a['like']);unset($a['fields']);unset($a['isall']);unset($a['notin']);unset($a['notempty']);unset($a['empty']);unset($a['day']);unset($a['in']);unset($a['sql']);unset($a['jzpage']);
 		$pages='';
 		$w = ' 1=1 ';
 		$ispage=false;
@@ -450,6 +482,8 @@ class View
 		}
 		
 		$w .= $notin_sql;
+		$w .= $in_sql;
+		$w .= $sql;
 		$w.= $lk;
 		$as = trim($as,"'");
 		$txt="<?php
@@ -460,17 +494,18 @@ class View
 		\$".$as."_limit=$limit;";
 		
 		if($ispage){
+			
 			$txt .="
+			\$pagenum = (int)\$_REQUEST['".$jzpage."'] ? (int)\$_REQUEST['".$jzpage."']  : 1; 
 			\$".$as."_page = new FrPHP\Extend\Page(\$".$as."_table);
 			\$".$as."_page->typeurl = 'tpl';
-			\$".$as."_data = \$".$as."_page->where(\$".$as."_w)->fields(\$".$as."_fields)->orderby(\$".$as."_order)->limit(\$".$as."_limit)->page(\$frpage)->go();
-			\$".$as."_pages = \$".$as."_page->pageList(3,'?page=');
+			\$".$as."_data = \$".$as."_page->where(\$".$as."_w)->fields(\$".$as."_fields)->orderby(\$".$as."_order)->limit(\$".$as."_limit)->page(\$pagenum)->go();
+			\$".$as."_pages = \$".$as."_page->pageList(3,'?".$jzpage."=');
 			\$".$as."_sum = \$".$as."_page->sum;
 			\$".$as."_listpage = \$".$as."_page->listpage;
 			\$".$as."_prevpage = \$".$as."_page->prevpage;
 			\$".$as."_nextpage = \$".$as."_page->nextpage;
 			\$".$as."_allpage = \$".$as."_page->allpage;";
-			
 		}else{
 			
 			$txt .= "
@@ -484,7 +519,7 @@ class View
 				if($'.$as.'_table==\'classtype\'){
 					$'.$as.'[\'url\'] = $classtypedata[$'.$as.'[\'id\']][\'url\'];
 				}else{
-					$'.$as.'[\'url\'] = gourl($'.$as.'[\'id\'],$'.$as.'[\'htmlurl\']);
+					$'.$as.'[\'url\'] = gourl($'.$as.',$'.$as.'[\'htmlurl\']);
 				}
 				
 			}
@@ -493,6 +528,5 @@ class View
 		return $txt;
 		
 	}
-	
 	
 }
