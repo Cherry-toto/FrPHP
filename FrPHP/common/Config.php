@@ -21,9 +21,9 @@ defined('APP_PATH') or exit();
 
 return array(
 	/*系统设定*/
-	'Tpl_style'			=>	 APP_PATH.'Public',//公共静态文件
+	'Tpl_style'			=>	 APP_PATH.'public',//公共静态文件
 	'Tpl_common'   		=>   'common',//模板公共目录Home\View\common
-	'APP_HOME'     		=>   'Home',//默认前台目录
+	'APP_HOME'     		=>   'app',//默认前台目录
 	'APP_URL'     		=>   APP_PATH.'index.php',//默认前台入口
 	'HOME_CONTROLLER'   =>   'Controller',//默认控制器文件目录
 	'HOME_MODEL'   		=>   'Model',//默认模型文件目录

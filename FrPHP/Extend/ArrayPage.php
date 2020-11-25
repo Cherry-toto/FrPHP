@@ -41,6 +41,8 @@
 		public $datalist = array();
 		//当前分页数组
 		public $listpage = array();
+		//分页标识
+		public $pagetype = 'page';
 		
 		
 		
@@ -51,72 +53,26 @@
 				exit('不是数组！');
 			}
 			
-			$this->currentPage = !isset($_GET['page']) ? 1 : $_GET['page'];
-			$param = $_REQUEST;
-			if(isset($param['page'])){
-				unset($param['page']);
+			
+			
+		}
+		
+		public function query($param){
+			$this->currentPage = !isset($_GET[$this->pagetype]) ? 1 : $_GET[$this->pagetype];
+			if(is_array($param)){
+				if(isset($param[$this->pagetype])){
+					unset($param[$this->pagetype]);
+				}
+				$url = http_build_query($param);
+			}else{
+				$url = '';
 			}
-			$this->url = http_build_query($param);
 			
-			
+			$this->url = $url;
+			return $this;
 		}
-		
-	
-		
-		/**
-	
-		格式化数组为pathinfo格式
 
-		**/
-
-		function array_pathInfo($url){
-			$url = http_build_query(array_filter($url));
-			$url = str_ireplace(array('&','='),'/',$url);
-			return $url;
-		}
-		/*
-		
-		<div class="pagination">
-		  <ul>
-			<li><a href="#">Prev</a></li>
-			<li><a href="#">1</a></li>
-			<li><a href="#">2</a></li>
-			<li><a href="#">3</a></li>
-			<li><a href="#">4</a></li>
-			<li class="active" ><a href="#">5</a></li>
-			<li><a href="#">Next</a></li>
-		  </ul>
-		</div>
-		
-		*/
-		public function pageList($pv=3){
-			/**
-			分页样式
-			
-			左边框  $padding-left-f
-			右边框  $padding-right-f
-			
-			上一页  $prev-f
-			下一页  $next-f
-			
-			当前页  $current_f
-			
-			普通页  $public_f
-			
-			
-			**/
-			/**
-				首页url  		home
-				上一页url		prev
-				下一页url       next
-				当前页url       current
-				总页数  	    allpage
-				当前页码		current_num
-				普通页码组      list
-				最后一页url		last
-			
-			
-			**/
+		public function pageList($pv=5){
 			$listpage = array(
 				'home' => null,
 				'prev' => null,
@@ -130,54 +86,32 @@
 	
 	
 			$this->pv = $pv;
-			$list = '<style>li {
-					float: left;
-					list-style: none;
-					padding: 10px;
-				}
-				a{text-decoration:none;}
-				li.active {
-					background: #f00;
-					color: #fff;
-				}
-				</style>';
+			$list = '';
 			$listpage['home'] = $this->url;	
 			$listpage['current_num'] = $this->currentPage;	
 			$listpage['allpage'] = $this->allpage;	
 
 			if($this->url==''){
-				$this->url.='?page=';
+				$this->url.='?'.$this->pagetype.'=';
 			}else{
-				$this->url = '?'.$this->url.'&page=';
+				$this->url = '?'.$this->url.'&'.$this->pagetype.'=';
 			}
 			$listpage['current'] = $this->url.$this->currentPage;	
-			for($i=1;$i<=$this->allpage;$i++){
-				if($this->allpage >= 2*$this->pv){
-					//需要间隔
-					$start = $this->currentPage+$this->pv;
-					$end = $this->currentPage-$this->pv;
-					if($i>=$end && $i<=$start){
-						if($i==$this->currentPage){
-				
-						$list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
-						}else{
-							
-							$list .= '<li><a href="'.$this->url.$i.'" data-page="'.$i.'">'.$i.'</a></li>';
-						}
-						$listpage['list'][] = array('url'=>$this->url.$i,'num'=>$i);
-					}
-				}else{
-					if($i==$this->currentPage){
-					
+			$start = $this->currentPage-$this->pv;
+			$start = $start<1 ? 1 : $start;
+			$end = $this->currentPage+$this->pv;
+			$end = $end>$this->allpage ? $this->allpage : $end;
+			while($start<=$end){
+				if($start==$this->currentPage){
 					$list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
-					}else{
-						
-						$list .= '<li><a href="'.$this->url.$i.'" data-page="'.$i.'">'.$i.'</a></li>';
-					}
-					$listpage['list'][] = array('url'=>$this->url.$i,'num'=>$i);
+					$listpage['current'] = $this->url.$start;
+					$listpage['current_num'] = $this->currentPage;
+				}else{
+					$list .= '<li><a href="'.$this->url.$start.'" data-page="'.$start.'">'.$start.'</a></li>';
 				}
+				$listpage['list'][] = array('url'=>$this->url.$start,'num'=>$start);
+				$start++;
 			}
-			
 			
 			$prev = '<li><a href="'.$this->url.($this->currentPage-1).'" class="layui-laypage-prev" data-page="'.($this->currentPage-1).'"><em>&lt;</em></a></li>';
 			
@@ -195,7 +129,6 @@
 				$list = $prev.'<li><a href="'.$this->url.'1" data-page="1">首页</a></li>'.$list;
 				$listpage['prev'] = $this->url.($this->currentPage-1);
 			}
-			
 			if($this->currentPage<$this->allpage){
 				$list .= $next;
 				$listpage['next'] = $this->url.($this->currentPage+1);
@@ -203,8 +136,8 @@
 			
 			if($this->allpage > $this->pv){
 				$list .= $last;
-				$listpage['next'] = $this->url.$this->allpage;
 			}
+			$listpage['last'] = $this->url.$this->allpage;
 			$list.=$all;
 			$list = $ext.$list.'</ul></div>';
 			$this->listpage = $listpage;
@@ -232,14 +165,15 @@
 			$this->sum = count($this->datalist);
 			$lists = array();
             $start = $this->limit * ($this->currentPage-1);
+			
             $end = $this->limit * $this->currentPage;
-			foreach($this->datalist as $k=>$v){
-				if($end>$k && $start<=$k){
+			$i = 0;
+			foreach($this->datalist as $v){
+				if($end>$i && $start<=$i){
 					$lists[]=$v;
 				}
+				$i++;
 			}
-			
-			
 			$allpage = ceil($this->sum/$this->limit);
 			if($allpage==0){$allpage=1;}
 			$this->allpage = $allpage;

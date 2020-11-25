@@ -49,8 +49,9 @@ function M($name=null) {
 /**
 	参数过滤，格式化
 **/
-function format_param($value=null,$int=0){
+function format_param($value=null,$int=0,$default=false){
 	if($value==null){ return '';}
+	if($value===false && $default!==false){ return $default;}
 	switch ($int){
 		case 0://整数
 			return (int)$value;
@@ -82,21 +83,21 @@ function format_param($value=null,$int=0){
 //过滤XSS攻击
 function SafeFilter($arr) 
 {
-   $ra=Array('/([\x00-\x08])/','/([\x0b-\x0c])/','/([\x0e-\x19])/','/script/','/javascript/');
+   $ra=Array('/([\x00-\x08])/','/([\x0b-\x0c])/','/([\x0e-\x19])/','/script(.*)script/','/javascript(.*)javascript/');
    $arr = preg_replace($ra,'',$arr);   
    return $arr;
 }
 function array_format(&$item, $key)
 {
 	$item=trim($item);
-	$item = SafeFilter($item);
+	//$item = SafeFilter($item);
 	$item=htmlspecialchars($item, ENT_QUOTES);
 	if(version_compare(PHP_VERSION,'7.4','>=')){
 		$item = addslashes($item);
 	}else{
 		if(!get_magic_quotes_gpc())$item = addslashes($item);
 	}
-
+}
 
 function unicodeEncode($str){
     //split word
@@ -599,8 +600,8 @@ function setCache($str,$data,$timeout=-1){
 	//设置
 	$rdata['frcache_time'] = $timeout;
 	$rdata['frcache_data'] = $data;
-	
-	$s = md5($str).'frphp'.md5($str);
+	$str = get_domain().$str;
+	$s = md5(md5($str.'frphp'.$str));
 	$cache_file_data = Cache_Path.'/data/'.$s.'.php';
 	if(!file_exists(Cache_Path.'/data')){
 		mkdir (Cache_Path.'/data',0777,true);
@@ -615,8 +616,8 @@ function setCache($str,$data,$timeout=-1){
 	
 	$res = json_encode($rdata,JSON_UNESCAPED_UNICODE);
 	$res = '<?php die();?>'.$res;
-	if(file_put_contents($cache_file_data,$res)){
-		
+	$r = file_put_contents($cache_file_data,$res);
+	if($r){
 		return true;
 	}else{
 		Error_msg('数据缓存失败，'.Cache_Path.'/data文件夹的读写权限设置为777！');
@@ -629,8 +630,9 @@ function getCache($str=false){
 	if(!$str){
 		return false;
 	}
+	$str = get_domain().$str;
 	//获取
-	$s = md5($str).'frphp'.md5($str);
+	$s = md5(md5($str.'frphp'.$str));
 	$cache_file_data = Cache_Path.'/data/'.$s.'.php';
 	if(!file_exists($cache_file_data)){
 		return false;

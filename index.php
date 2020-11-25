@@ -16,10 +16,10 @@
 define('APP_PATH', __DIR__ . '/');
 
 //定义项目目录
-define('APP_HOME','Home');
+define('APP_HOME','app');
 
 //定义项目模板文件目录-根目录template
-define('HOME_VIEW',APP_PATH.'template');
+define('HOME_VIEW',APP_PATH.'static');
 
 //定义项目模板公共文件目录
 define('Tpl_common','');

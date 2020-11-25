@@ -35,7 +35,7 @@ namespace FrPHP\Extend;
 		//系统分页链接
 		public $url = '';
 		//分页分隔符
-		public $sep = '?page=';
+		public $sep = '/page/';
 		//SQL
 		public $sql = null;
 		//排序
@@ -49,37 +49,85 @@ namespace FrPHP\Extend;
 		//分页url设置
 		public $typeurl = '';
 		//是否需要后缀File_TXT
-		public $file_ext = '';
+		public $file_ext = File_TXT;
 		
 		
 		
-		public function __construct($table){
+		public function __construct($table=''){
 			
 			$this->table = $table;
-			if(!$table){
-				Error_msg('缺少表对象！');
-			}
+
 		}
 		
 		
 		public function getUrl(){
-			$request_uri = $_SERVER["REQUEST_URI"];
-			if(isset($_GET['page'])){
-				unset($_GET['page']);
+			$request_uri = $_SERVER["REQUEST_URI"];    
+            if(strpos($request_uri,APP_URL)!==false){
+				//后台
+				$this->file_ext = '';
+				$this->sep = '?page=';
+				if(isset($_GET['page'])){
+					unset($_GET['page']);
+				}
+				$url = get_domain().APP_URL.'/'.APP_CONTROLLER.'/'.APP_ACTION;
+				if(count($_GET)>0){
+					$this->sep = '&page=';
+					$url = get_domain().APP_URL.'/'.APP_CONTROLLER.'/'.APP_ACTION.'?'.http_build_query($_GET);
+				}
+			}else{
+				//$url = str_ireplace('.html','',$request_uri);
+				//$position = strpos($url, '-');
+				//$url = $position === false ? $url : substr($url, 0, $position);
+				
+				switch($this->typeurl){
+					case 'screen':
+						//$url = str_ireplace('.html','',$request_uri);
+					$url = get_domain().'/screen-'.$_GET['molds'].'-'.$_GET['tid'].'-'.$_GET['jz_screen']; 
+						if(strpos($url,'page')!==false){
+							$urls = explode('-page-',$url);
+							$url = $urls[0];
+						}
+					break;
+					case 'tpl':
+						$this->file_ext = '';
+						$url = str_ireplace('.html','',$request_uri);
+						if(strpos($url,'?')!==false){
+							$urls = explode('?',$url);
+							$url = $urls[0];
+						}
+						
+						
+					break;
+					case 'search':
+						$param = $_REQUEST;
+						if(isset($param['page'])){
+							unset($param['page']);
+						}
+						unset($param['ajax']);
+						unset($param['ajax_tpl']);
+						$url = get_domain().'/search?'.http_build_query($param);
+						
+					break;
+					default:
+						$url = str_ireplace('.html','',$request_uri);
+						
+					
+					break;
+					
+				}
+				
+				
 			}
-
-			$appurl = APP_URL=='/index.php' ? '' : APP_URL;
-			$url = get_domain().$appurl.'/'.APP_CONTROLLER.'/'.APP_ACTION;
-			if(count($_GET)>0){
-				$this->sep = str_replace('?','&',$this->sep);
-				$url = get_domain().$appurl.'/'.APP_CONTROLLER.'/'.APP_ACTION.'?'.http_build_query($_GET);
+			
+			if(File_TXT_HIDE && !CLASS_HIDE_SLASH){
+				$url = (strripos($url,'/')+1 == strlen($url)) ? substr($url,0,strripos($url,'/')) : $url; 
 			}
 			
 			return $url;
             
 		}
 		
-		public function pageList($pv=3,$sep=false){
+		public function pageList($pv=5,$sep=false){
 			/**
 				首页url  		home
 				上一页url		prev
@@ -116,38 +164,29 @@ namespace FrPHP\Extend;
 			}
 			$this->url = $url;
 			$list = '';
-			$file_ext = $this->file_ext;
-			$listpage['home'] = $this->url.$file_ext;
-			for($i=1;$i<=$this->allpage;$i++){
-				if($this->allpage >= 2*$this->pv){
-					//需要间隔
-					$start = $this->currentPage+$this->pv;
-					$end = $this->currentPage-$this->pv;
-					if($i>=$end && $i<=$start){
-						if($i==$this->currentPage){
-							$list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
-							$listpage['current'] = $this->url.$this->sep.$i.$file_ext;
-							$listpage['current_num'] = $this->currentPage;
-						}else{
-							$list .= '<li><a href="'.$this->url.$this->sep.$i.$file_ext.'" data-page="'.$i.'">'.$i.'</a></li>';
-							
-						}
-						
-						$listpage['list'][] = array('url'=>$this->url.$this->sep.$i.$file_ext,'num'=>$i);
-					}
-				}else{
-					if($i==$this->currentPage){
-						$list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
-						$listpage['current'] = $this->url.$this->sep.$i.$file_ext;
-						$listpage['current_num'] = $this->currentPage;
-					}else{
-						$list .= '<li><a href="'.$this->url.$this->sep.$i.$file_ext.'" data-page="'.$i.'">'.$i.'</a></li>';
-						
-					}
-					$listpage['list'][] = array('url'=>$this->url.$this->sep.$i.$file_ext,'num'=>$i);
-				}
+			//$file_ext = $this->file_ext;
+			$file_ext = File_TXT_HIDE ? '' : File_TXT;
+			if($file_ext==''){
+				$file_ext = CLASS_HIDE_SLASH ? $file_ext : $file_ext.'/';
 			}
-			$listpage['allpage'] = $this->allpage;
+			
+			$listpage['home'] = $this->url.$file_ext;
+			$start = $this->currentPage-$this->pv;
+			$start = $start<1 ? 1 : $start;
+			$end = $this->currentPage+$this->pv;
+			$end = $end>$this->allpage ? $this->allpage : $end;
+			while($start<=$end){
+				if($start==$this->currentPage){
+					$list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
+					$listpage['current'] = $this->url.$this->sep.$start.$file_ext;
+					$listpage['current_num'] = $this->currentPage;
+				}else{
+					$list .= '<li><a href="'.$this->url.$this->sep.$start.$file_ext.'" data-page="'.$start.'">'.$start.'</a></li>';
+				}
+				$listpage['list'][] = array('url'=>$this->url.$this->sep.$start.$file_ext,'num'=>$start);
+				$start++;
+			}
+			$listpage['allpage'] = $this->url.$this->sep.$this->allpage;
 			
 			$prev = '<li><a href="'.$this->url.$this->sep.($this->currentPage-1).$file_ext.'" class="layui-laypage-prev" data-page="'.($this->currentPage-1).'"><em>&lt;</em></a></li>';
 			
@@ -171,17 +210,14 @@ namespace FrPHP\Extend;
 				$list = $prev.$list;
 				$listpage['prev'] = $this->prevpage;
 			}
-			
 			if($this->currentPage<$this->allpage){
 				$list .= $next;
 				$listpage['next'] = $this->nextpage;
 			}
-			
 			if($this->allpage > $this->pv){
 				$list .= $last;
-				$listpage['last'] = $this->url.$this->sep.$this->allpage.$file_ext;
 			}
-			
+			$listpage['last'] = $this->url.$this->sep.$this->allpage.$file_ext;
 			$list = $ext.$list.'</ul></div>';
 			$this->listpage = $listpage;
 			return $list;
@@ -295,7 +331,36 @@ namespace FrPHP\Extend;
 			return $this->datalist;
 		}
 		
+		// SQL处理
+		public function goSql(){
+			if($this->currentPage!=1){
+				$limitsql = (($this->limit*($this->currentPage-1)) - ($this->limit_t)).','.$this->limit;
+				//1-0:1  2-2:3
+			}else{
+				if($this->limit_t!=0){
+					$limitsql = $this->limit_t.','.$this->limit;
+				}else{
+					$limitsql = $this->limit;
+				}
+				
+			}
+			$orderby = $this->order ? ' order by '.$this->order : '';
+			$limit = ' limit '.$limitsql;
+			$sql = $this->sql.' '.$orderby.' '.$limit;
+			$this->datalist = M()->findSql($sql);
+			$this->limit = $this->limit;
+
+			$allpage = ceil($this->sum/$this->limit);
+			if($allpage==0){$allpage=1;}
+			$this->allpage = $allpage;
+			return $this->datalist;
+		}
 		
+		public function goCount($sql){
+			$n = M()->findSql($sql);
+			$this->sum = count($n);
+			return $this;
+		}
 		
 		
 		

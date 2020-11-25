@@ -7,16 +7,16 @@
 // +----------------------------------------------------------------------
 // | Author: 留恋风 <2581047041@qq.com>
 // +----------------------------------------------------------------------
-// | Date：2019/02/13
+// | Date：2020/08/14
 // +----------------------------------------------------------------------
 
 
-namespace Home\c;
+namespace app\c;
 use FrPHP\lib\Controller;
 
 class IndexController extends Controller
 {
 	public function index(){
-		echo '<h1>Hello FrPHP Framework !</h1>';
+		echo '<h3>Hello FrPHP Framework !</h3>';
 	}
 }

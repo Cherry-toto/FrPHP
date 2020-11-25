@@ -411,13 +411,23 @@ class FrPHP
 
 //检查是否存在配置文件
 if(!defined('CONF_PATH')){
-	define('CONF_PATH','Conf');
+	define('CONF_PATH','conf');
 }
-if(!file_exists(APP_PATH .CONF_PATH.'/config.php')){
+if(!file_exists(APP_PATH.CONF_PATH.'/config.php')){
 	if(!file_exists(APP_PATH.CONF_PATH)){
 		$res = mkdir(APP_PATH.CONF_PATH,0777,true);
 		if(!$res){
 			exit('根目录没有创建文件夹权限，请手动创建'.CONF_PATH.'配置文件夹目录！');
+		}
+	}
+	if(!file_exists(HOME_VIEW)){
+		$res = mkdir(HOME_VIEW,0777,true);
+		if(!$res){
+			exit('根目录没有创建文件夹权限，请手动创建'.HOME_VIEW.'模板文件夹目录！');
+		}
+		$res = mkdir(HOME_VIEW.'/pc',0777,true);
+		if(!$res){
+			exit('根目录没有创建文件夹权限，请手动创建'.HOME_VIEW.'/pc模板文件夹目录！');
 		}
 	}
 	$conf = array ('db' => 

@@ -298,18 +298,7 @@ class View
 			if(strpos($a['table'],'$')!==FALSE){$a['table']=trim($a['table'],"'");}
 			$db=$a['table'];
 		}else{
-			if(!isset($a['tid'])){ exit('缺少table参数！');}
-			if(strpos($a['tid'],'$')!==false){
-				$db = ' $classtypedata['.trim($a['tid'],"'").']["molds"] ';
-			}else{
-				if(strpos($a['tid'],',')!==false){
-					$tids = explode(',',$a['tid']);
-					$db = ' $classtypedata['.trim($tids[0],"'").']["molds"] ';
-				}else{
-					$db = ' $classtypedata['.trim($a['tid'],"'").']["molds"] ';
-				}
-			}
-			
+			exit('缺少table参数！');
 		}
 		if(isset($a['limit'])){$limit=$a['limit'];}else{$limit='null';}
 		if(isset($a['notempty'])){$notempty=trim($a['notempty'],"'");}else{$notempty=false;}
@@ -323,10 +312,8 @@ class View
 		if(isset($a['orderby'])){
 			$order=$a['orderby'];
 			if(strpos($a['orderby'],'$')!==FALSE){$order=trim($a['orderby'],"'");}
-			//$order=' '.str_replace('|',' ',$order).' ';
 		}else{$order="' id desc '";}
 		if(isset($a['like'])){
-			// like='title|学习,keywords|学习' => title like '%学习%' and keywords like '%学习%';
 			$lk = array();
 			if(strpos($a['like'],',')!==false){
 				$like = explode(',',trim($a['like'],"'"));
@@ -379,64 +366,23 @@ class View
 			}
 		}
 		if($sql){
-			$sql = " and '.".$sql.".'";
+			$sql = " and ('.".$sql.".' ) ";
 		}
 		unset($a['table']);unset($a['orderby']);unset($a['limit']);unset($a['as']);unset($a['like']);unset($a['fields']);unset($a['isall']);unset($a['notin']);unset($a['notempty']);unset($a['empty']);unset($a['day']);unset($a['in']);unset($a['sql']);unset($a['jzpage']);
 		$pages='';
 		$w = ' 1=1 ';
 		$ispage=false;
-		
+		if(stripos($jzpage.'$')!==false){
+			$jzpage = "'.$jzpage.'";
+		}
 		foreach($a as $k=>$v){
 			if(strpos($v,'$')===FALSE){
-				//$v = str_ireplace("'",'',$v);
 				$v = trim($v,"'");
 			}
 			
 			if($k=='ispage'){
 				$ispage=true;
-			}else if($k=='tid'){
-				
-				if(strpos($a['tid'],',')!==false){
-					
-					if($isall){
-						$a['tid'] = trim($a['tid'],"'");
-						$tids=explode(',',$a['tid']);
-						$ss = [];
-						foreach($tids as $s){
-							$ss[] = '  tid in(\'.implode(",",$classtypedata['.$s.']["children"]["ids"]).\') ';
-						}
-						$w.=' and ('.implode(' or ',$ss).' ) ';
-					}else{
-						$w.=' and tid in('.trim($a['tid'],"'").') ';
-					}
-					
-					
-				}else{
-					
-					if(strpos($a['tid'],'$')!==false){
-						if($isall){
-							
-							$w.= ' and  tid in(\'.implode(",",$classtypedata['.trim($v,"'").']["children"]["ids"]).\') ';
-						}else{
-							$w.="and tid='.".trim($v,"'").".' ";
-						}
-						
-						
-					}else{
-						
-						if($isall){
-							$w.= ' and  tid in(\'.implode(",",$classtypedata['.trim($v,"'").']["children"]["ids"]).\') ';
-						}else{
-							$w.="and tid=".$v." ";
-						}
-						
-						
-					}
-				}
-				
-				// if($isall && isset($a['tid'])){
-					// $w.='or tid in(\'.implode(",",$classtypedata['.$a["tid"].']["children"]["ids"]).\') ';
-				// }
+			
 			}else{
 				if(strpos($v,'$')!==FALSE){
 					$w.="and ".$k."=\''.".trim($v,"'").".'\' ";
@@ -455,11 +401,11 @@ class View
 			if(strpos($notempty,'|')!==false){
 				$notempty = explode('|',$notempty);
 				foreach($notempty as $v){
-					$w.=' (and trim('.$v.') !="" or trim('.$v.') is not null) ';
+					$w.=' (and trim('.$v.') !="" && trim('.$v.') is not null) ';
 				}
 				
 			}else{
-				$w.=' and (trim('.$notempty.') !="" or trim('.$notempty.') is not null)  ';
+				$w.=' and (trim('.$notempty.') !="" && trim('.$notempty.') is not null)  ';
 			}
 			
 		}
@@ -514,15 +460,6 @@ class View
 		}
 		$txt.='$'.$as.'_n=0;foreach($'.$as.'_data as $'.$as.'_key=> $'.$as.'){
 			$'.$as.'_n++;
-			if(isset($'.$as.'[\'htmlurl\']) && !isset($'.$as.'[\'url\'])){
-				
-				if($'.$as.'_table==\'classtype\'){
-					$'.$as.'[\'url\'] = $classtypedata[$'.$as.'[\'id\']][\'url\'];
-				}else{
-					$'.$as.'[\'url\'] = gourl($'.$as.',$'.$as.'[\'htmlurl\']);
-				}
-				
-			}
 			?>';
 		
 		return $txt;
