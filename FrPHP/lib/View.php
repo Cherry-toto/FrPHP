@@ -1,26 +1,25 @@
 <?php
 
 // +----------------------------------------------------------------------
-// | FrPHP { a friendly PHP Framework } 
+// | frphp { a friendly PHP Framework }
 // +----------------------------------------------------------------------
 // | Copyright (c) 2018-2099 http://frphp.jizhicms.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: 留恋风 <2581047041@qq.com>
 // +----------------------------------------------------------------------
-// | Date：2018/02
+// | Date：2022/02/28
 // +----------------------------------------------------------------------
 
 
-namespace FrPHP\lib;
+namespace frphp\lib;
 
-use FrPHP\Extend\Page;
+use frphp\extend\Page;
 
 /**
  * 视图基类
  */
 class View
 {
-    protected $variables = array();
     protected $_controller;
     protected $_action;
     protected $_cachefile;
@@ -34,7 +33,7 @@ class View
     // 分配变量
     public function assign($name, $value)
     {
-        $this->variables[$name] = $value;
+        $GLOBALS[$name] = $value;
     }
  
     // 渲染显示
@@ -71,7 +70,7 @@ class View
 	
 	//模板解析
 	public function template($controllerLayout){
-		extract($this->variables);//分配变量到模板中
+        extract($GLOBALS);//分配变量到模板中
 		$cache_file = Cache_Path.'/'.md5($controllerLayout).'.php';
 		$this->_cachefile = $cache_file;//传入系统中
 		
@@ -234,6 +233,8 @@ class View
 					$arr_tid[]=" (tids like '%,".$v.",%') ";
 				}
 			$tids = ' ( '. implode('or',$arr_tid).' ) ';
+			}else if(strpos($a['tid'],'$')!==false){
+				$tids = " tids like  '%,".trim($a['table'],"'").",%'  ";
 			}else{
 				$tids = " tids like  '%,".$a['tid'].",%'  ";
 			}
@@ -424,7 +425,12 @@ class View
 		}
 		if($day){
 			$day =str_replace("'",'',$day);
-			$w.=" and DATE_SUB(CURDATE(), INTERVAL ".$day." DAY) <= date(FROM_UNIXTIME(addtime))";
+			if(strpos($day,'$')!==false){
+				$day = trim($day,"'");
+				$w.=" and DATE_SUB(CURDATE(), INTERVAL '".".$day."."' DAY) <= date(FROM_UNIXTIME(addtime))";
+			}else{
+				$w.=" and DATE_SUB(CURDATE(), INTERVAL ".$day." DAY) <= date(FROM_UNIXTIME(addtime))";
+			}
 		}
 		
 		$w .= $notin_sql;
@@ -443,7 +449,7 @@ class View
 			
 			$txt .="
 			\$pagenum = (int)\$_REQUEST['".$jzpage."'] ? (int)\$_REQUEST['".$jzpage."']  : 1; 
-			\$".$as."_page = new FrPHP\Extend\Page(\$".$as."_table);
+			\$".$as."_page = new frphp\Extend\Page(\$".$as."_table);
 			\$".$as."_page->typeurl = 'tpl';
 			\$".$as."_data = \$".$as."_page->where(\$".$as."_w)->fields(\$".$as."_fields)->orderby(\$".$as."_order)->limit(\$".$as."_limit)->page(\$pagenum)->go();
 			\$".$as."_pages = \$".$as."_page->pageList(3,'?".$jzpage."=');

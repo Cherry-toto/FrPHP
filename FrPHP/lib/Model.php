@@ -1,18 +1,18 @@
 <?php
 
 // +----------------------------------------------------------------------
-// | FrPHP { a friendly PHP Framework } 
+// | frphp { a friendly PHP Framework }
 // +----------------------------------------------------------------------
 // | Copyright (c) 2018-2099 http://frphp.jizhicms.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: 留恋风 <2581047041@qq.com>
 // +----------------------------------------------------------------------
-// | Date：2018/03/15
+// | Date：2022/02/28
 // +----------------------------------------------------------------------
 
 
-namespace FrPHP\lib;
-use FrPHP\db\DBholder;
+namespace frphp\lib;
+use frphp\db\DBholder;
 use PDO;
 class Model {
 	protected $model;
@@ -176,8 +176,8 @@ class Model {
     }
 	
 	//获取单一字段内容
-	public function getField($where=null,$fields=null){
-		if( $record = $this->findAll($where, null, $fields, 1) ){
+	public function getField($where=null,$fields=null,$orders=null){
+		if( $record = $this->findAll($where, $orders, $fields, 1) ){
 			$res = array_pop($record);
 			return $res[$fields];
 		}else{

@@ -1,7 +1,7 @@
 <?php
 
 // +----------------------------------------------------------------------
-// | FrPHP { a friendly PHP Framework } 
+// | frphp { a friendly PHP Framework }
 // +----------------------------------------------------------------------
 // | Copyright (c) 2018-2099 http://frphp.jizhicms.com All rights reserved.
 // +----------------------------------------------------------------------
@@ -26,7 +26,7 @@
 
 function M($name=null) {
 	if(empty($name)){
-		$path = 'FrPHP\lib\\Model';
+		$path = 'frphp\\lib\\Model';
 		return $path::getInstance();
 	}
     $name = ucfirst($name);
@@ -36,7 +36,7 @@ function M($name=null) {
 		$table = $name;
 		$name = APP_HOME.'\\'.HOME_MODEL.'\\'.$name.'Model';
 		if(!class_exists($name)){
-			$path = 'FrPHP\lib\\Model';
+			$path = 'frphp\\lib\\Model';
 			return $path::getInstance($table);
 		}else{
 			return $name::getInstance($table);
@@ -50,35 +50,35 @@ function M($name=null) {
 	参数过滤，格式化
 **/
 function format_param($value=null,$int=0,$default=false){
-	if($value==null){ return '';}
-	if($value===false && $default!==false){ return $default;}
-	switch ($int){
-		case 0://整数
-			return (int)$value;
-		case 1://字符串
-			$value = SafeFilter($value);
-			$value=htmlspecialchars(trim($value), ENT_QUOTES);
-			if(version_compare(PHP_VERSION,'7.4','>=')){
-				$value = addslashes($value);
-			}else{
-				if(!get_magic_quotes_gpc())$value = addslashes($value);
-			}
-			
-			return $value;
-		case 2://数组
-			if($value=='')return '';
-			array_walk_recursive($value, "array_format");
-			return $value;
-		case 3://浮点
-			return (float)$value;
-		case 4:
-			if(version_compare(PHP_VERSION,'7.4','>=')){
-				$value = addslashes($value);
-			}else{
-				if(!get_magic_quotes_gpc())$value = addslashes($value);
-			}
-			return trim($value);
-	}
+    if($value==null){ return '';}
+    if($value===false && $default!==false){ return $default;}
+    switch ($int){
+        case 0://整数
+            return (int)$value;
+        case 1://字符串
+            $value = SafeFilter($value);
+            $value=htmlspecialchars(trim($value), ENT_QUOTES);
+            if(version_compare(PHP_VERSION,'7.4','>=')){
+                $value = addslashes($value);
+            }else{
+                if(!get_magic_quotes_gpc())$value = addslashes($value);
+            }
+            
+            return $value;
+        case 2://数组
+            if($value=='')return '';
+            array_walk_recursive($value, "array_format");
+            return $value;
+        case 3://浮点
+            return (float)$value;
+        case 4:
+            if(version_compare(PHP_VERSION,'7.4','>=')){
+                $value = addslashes($value);
+            }else{
+                if(!get_magic_quotes_gpc())$value = addslashes($value);
+            }
+            return trim($value);
+    }
 }
 //过滤XSS攻击
 function SafeFilter($arr) 
@@ -246,7 +246,7 @@ function Error($info, $url=null){
 **/
 
 function JsonReturn($data){
-	echo json_encode($data);
+	echo json_encode($data,JSON_UNESCAPED_UNICODE);
 	exit;
 }
 
@@ -269,59 +269,61 @@ function GetIP(){
 	return($ip); 
 }
 */
-function GetIP(){ 
-  static $ip = '';
-  $ip = $_SERVER['REMOTE_ADDR'];
-  if(isset($_SERVER['HTTP_CDN_SRC_IP']) && preg_match('/^([0-9]{1,3}\.){3}[0-9]{1,3}$/', $_SERVER['HTTP_CDN_SRC_IP'])) {
-    $ip = $_SERVER['HTTP_CDN_SRC_IP'];
-  } elseif (isset($_SERVER['HTTP_CLIENT_IP']) && preg_match('/^([0-9]{1,3}\.){3}[0-9]{1,3}$/', $_SERVER['HTTP_CLIENT_IP'])) {
-    $ip = $_SERVER['HTTP_CLIENT_IP'];
-  } elseif(isset($_SERVER['HTTP_X_FORWARDED_FOR']) AND preg_match_all('#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}#s', $_SERVER['HTTP_X_FORWARDED_FOR'], $matches)) {
-    foreach ($matches[0] AS $xip) {
-      if (!preg_match('#^(10|172\.16|192\.168)\.#', $xip)) {
-        $ip = $xip;
-        break;
-      }
+function GetIP(){
+    static $ip = '';
+    $ip = $_SERVER['REMOTE_ADDR'];
+    if(isset($_SERVER['HTTP_CDN_SRC_IP']) && preg_match('/^([0-9]{1,3}\.){3}[0-9]{1,3}$/', $_SERVER['HTTP_CDN_SRC_IP'])) {
+        $ip = $_SERVER['HTTP_CDN_SRC_IP'];
+    } elseif (isset($_SERVER['HTTP_CLIENT_IP']) && preg_match('/^([0-9]{1,3}\.){3}[0-9]{1,3}$/', $_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif(isset($_SERVER['HTTP_X_FORWARDED_FOR']) AND preg_match_all('#\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}#s', $_SERVER['HTTP_X_FORWARDED_FOR'], $matches)) {
+        foreach ($matches[0] AS $xip) {
+            if (!preg_match('#^(10|172\.16|192\.168)\.#', $xip)) {
+                $ip = $xip;
+                break;
+            }
+        }
     }
-  }
-  return $ip;
+    return $ip;
 }
 //获取域名
-//获取域名
 function get_domain(){
-	if ( ! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
-	{
-		$protocol = "https://";
-	}
-	elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
-	{
-		$protocol = "https://";
-	}
-	elseif ( ! empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off')
-	{
-		$protocol = "https://";
-	}else{
-		$protocol = "http://";
-	}
-	
-    if(isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
-        $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
-    }elseif (isset($_SERVER['HTTP_HOST'])) {
-        $host = $_SERVER['HTTP_HOST'];
+    if ( ! empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off')
+    {
+        $protocol = "https://";
+    }
+    elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+    {
+        $protocol = "https://";
+    }
+    elseif ( ! empty($_SERVER['HTTP_FROM_HTTPS']) && strtolower($_SERVER['HTTP_FROM_HTTPS']) !== 'off')
+    {
+        $protocol = "https://";
+    }
+    elseif ( ! empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off')
+    {
+        $protocol = "https://";
+    }else if(!empty($_SERVER['HTTP_X_CLIENT_SCHEME']) && $_SERVER['HTTP_X_CLIENT_SCHEME']=='https'){
+        $protocol = "https://";
     }else{
-        if(isset($_SERVER['SERVER_PORT'])) {
-            $port = ':' . $_SERVER['SERVER_PORT'];
-            if((':80' == $port && 'http://' == $protocol) || (':443' == $port && 'https://' == $protocol)) {
-                $port = '';
-            }
-        }else{
+        $protocol = "http://";
+    }
+    if(isset($_SERVER['SERVER_PORT'])) {
+        $port = ':' . $_SERVER['SERVER_PORT'];
+        if((':80' == $port && 'http://' == $protocol) || (':443' == $port && 'https://' == $protocol)) {
             $port = '';
         }
-        if(isset($_SERVER['SERVER_NAME'])) {
-            $host = $_SERVER['SERVER_NAME'].$port;
-        }else if(isset($_SERVER['SERVER_ADDR'])) {
-            $host = $_SERVER['SERVER_ADDR'].$port;
-        }
+    }else{
+        $port = '';
+    }
+    if(isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+        $host = $_SERVER['HTTP_X_FORWARDED_HOST'].$port;
+    }else if (isset($_SERVER['HTTP_HOST'])) {
+        $host = $_SERVER['HTTP_HOST'];
+    }else if(isset($_SERVER['SERVER_NAME'])) {
+        $host = $_SERVER['SERVER_NAME'].$port;
+    }else if(isset($_SERVER['SERVER_ADDR'])) {
+        $host = $_SERVER['SERVER_ADDR'].$port;
     }
     return $protocol.$host;
 }
@@ -359,30 +361,30 @@ function Redirect($url,$info=null,$sec=3){
 **/
 
 function start_session($expire = 0)  {
-	
-	if ($expire == 0) {
-			//$expire = ini_get('session.gc_maxlifetime');
-			$expire = SessionTime;
-		} else {
-			
-			ini_set('session.gc_maxlifetime', $expire);
-		}
-	$session_cache_dir = Cache_Path.'/tmp';
-	if(!file_exists($session_cache_dir)){
-		mkdir($session_cache_dir,0777,true);
-	}
-	ini_set('session.save_path',$session_cache_dir);
-	ini_set("session.cookie_httponly", 1);
-	
-	if (!isset($_COOKIE['PHPSESSID'])) {
-		session_set_cookie_params($expire);
-		session_start();
-	} else {
-		session_start();
-		setcookie('PHPSESSID', $_COOKIE['PHPSESSID'], time() + $expire,'/');
-	}
-
-} 
+    
+    if ($expire == 0) {
+        //$expire = ini_get('session.gc_maxlifetime');
+        $expire = SessionTime;
+    } else {
+        
+        ini_set('session.gc_maxlifetime', $expire);
+    }
+    $session_cache_dir = APP_PATH.'cache/tmp';
+    if(!file_exists($session_cache_dir)){
+        mkdir($session_cache_dir,0777,true);
+    }
+    ini_set('session.save_path',$session_cache_dir);
+    
+    
+    if (!isset($_COOKIE['PHPSESSID'])) {
+        session_set_cookie_params($expire);
+        session_start();
+    } else {
+        session_start();
+        setcookie('PHPSESSID', $_COOKIE['PHPSESSID'], time() + $expire,'/');
+    }
+    
+}
 
 /**
 
@@ -393,30 +395,33 @@ function start_session($expire = 0)  {
 **/
 
 function register_log($data=null,$dataname=null){
-	if($dataname==null){
-		Error_msg('日志名称不能为空！');
-	}
-	
-	$st = array('m'=>APP_CONTROLLER,'a'=>APP_ACTION,'t'=>date('Y-m-d H:i:s',time()),'ip'=>GetIP(),'data'=>$data);
-	if(!is_dir(Cache_Path.'/log')){
-		mkdir(Cache_Path.'/log');
-	}
-	//读取日志文件
-	$logurl = Cache_Path.'/log/'.$dataname.'.php';
-	$log = @fopen($logurl,"r");
-	$log_txt=@fread($log,filesize($logurl));
-	@fclose($log);
-
-	if($log_txt!=''){
-		$log_txt = substr($log_txt,14);
-		$log_txt = json_decode($log_txt,true);
-	}
-	$log_txt[]=$st;
-	$log_txt = json_encode($log_txt,JSON_UNESCAPED_UNICODE);
-	$log_txt = '<?php die();?>'.$log_txt;
-	$log_x=@fopen($logurl,"w");
-	@fwrite($log_x,$log_txt);
-	@fclose($log_x);
+    if($dataname==null){
+        Error_msg('日志名称不能为空！');
+    }
+    
+    $st = array('m'=>APP_CONTROLLER,'a'=>APP_ACTION,'t'=>date('Y-m-d H:i:s',time()),'ip'=>GetIP(),'data'=>$data);
+    if(!is_dir(APP_PATH.'cache/log')){
+        mkdir(APP_PATH.'cache/log');
+    }
+    //读取日志文件
+    $logurl = APP_PATH.'cache/log/'.$dataname.'.php';
+    if(file_exists($logurl)){
+        $log = @fopen($logurl,"r");
+        $log_txt=@fread($log,filesize($logurl));
+        @fclose($log);
+    }else{
+        $log_txt = '';
+    }
+    if($log_txt!=''){
+        $log_txt = substr($log_txt,14);
+        $log_arr = json_decode($log_txt,true);
+    }
+    $log_arr[]=$st;
+    $log_txt = json_encode($log_arr,JSON_UNESCAPED_UNICODE);
+    $log_txt = '<?php die();?>'.$log_txt;
+    $log_x=@fopen($logurl,"w");
+    @fwrite($log_x,$log_txt);
+    @fclose($log_x);
 }
 
 
@@ -427,23 +432,23 @@ function register_log($data=null,$dataname=null){
 **/
 
 function show_log($dataname=null){
-	if($dataname!=null){
-		//主日志记录
-		$logurl = APP_PATH.'cache/log/'.$dataname.'.php';
-		if(!file_exists($logurl)){
-			return false;
-		}
-		// $log = @fopen($logurl,"r");
-		// $logdata=@fread($log,filesize($logurl));
-		// @fclose($log);
-		$logdata = file_get_contents($logurl);
-		$logdata = substr($logdata,14);
-		$logdata = json_decode($logdata,true);
-		//dump($logdata);
-		return $logdata;
-	}else{
-		Error_msg('请输入日志名称！');
-	}
+    if($dataname!=null){
+        //主日志记录
+        $logurl = APP_PATH.'cache/log/'.$dataname.'.php';
+        if(!file_exists($logurl)){
+            return false;
+        }
+        // $log = @fopen($logurl,"r");
+        // $logdata=@fread($log,filesize($logurl));
+        // @fclose($log);
+        $logdata = file_get_contents($logurl);
+        $logdata = substr($logdata,14);
+        $logdata = json_decode($logdata,true);
+        //dump($logdata);
+        return $logdata;
+    }else{
+        Error_msg('请输入日志名称！');
+    }
 }
 
 
@@ -452,31 +457,34 @@ function show_log($dataname=null){
 	记录报错
 **/
 function actionLog(){
-	if(APP_DEBUG === true){
-		//开启调试模式自动记录事件,可以手动关闭
-		if(!StopLog){
-			
-			$st = array('m'=>APP_CONTROLLER,'a'=>APP_ACTION,'t'=>date('Y-m-d H:i:s',time()),'ip'=>GetIP(),'data'=>'');
-			//读取日志文件
-			$logurl = APP_PATH.'cache/log/memberAction.php';
-			
-			$log = @fopen($logurl,"r");
-			$log_txt=@fread($log,filesize($logurl));
-			@fclose($log);
-
-			if($log_txt!=''){
-				$log_txt = substr($log_txt,14);
-				$log_txt = json_decode($log_txt,true);
-			}
-			$log_txt[]=$st;
-			$log_txt = '<?php die();?>'.$log_txt;
-			$log_txt = json_encode($log_txt,JSON_UNESCAPED_UNICODE);
-			$log_x=@fopen($logurl,"w");
-			@fwrite($log_x,$log_txt);
-			@fclose($log_x);
-			
-		}
-	}
+    if(APP_DEBUG === true){
+        //开启调试模式自动记录事件,可以手动关闭
+        if(!StopLog){
+            
+            $st = array('m'=>APP_CONTROLLER,'a'=>APP_ACTION,'t'=>date('Y-m-d H:i:s',time()),'ip'=>GetIP(),'data'=>'');
+            //读取日志文件
+            $logurl = APP_PATH.'cache/log/memberAction.php';
+            
+            if(file_exists($logurl)){
+                $log = @fopen($logurl,"r");
+                $log_txt=@fread($log,filesize($logurl));
+                @fclose($log);
+            }else{
+                $log_txt = '';
+            }
+            if($log_txt!=''){
+                $log_txt = substr($log_txt,14);
+                $log_arr = json_decode($log_txt,true);
+            }
+            $log_arr[]=$st;
+            $log_txt = json_encode($log_arr,JSON_UNESCAPED_UNICODE);
+            $log_txt = '<?php die();?>'.$log_txt;
+            $log_x=@fopen($logurl,"w");
+            @fwrite($log_x,$log_txt);
+            @fclose($log_x);
+            
+        }
+    }
 }
 
 /**
@@ -655,13 +663,13 @@ function getCache($str=false){
 //引入扩展文件
 function extendFile($filepath){
 	if(strpos($filepath,'.')!==false){
-		require_once(CORE_PATH.'/Extend/'.$filepath);
+		require_once(CORE_PATH.'/extend/'.$filepath);
 	}else{
-		$Extend = scandir(CORE_PATH.'/Extend'.$filepath);
+		$Extend = scandir(CORE_PATH.'/extend'.$filepath);
 		
 		foreach($Extend as $v){
 			if(strpos($v,'.php')!==false){
-				require_once CORE_PATH.'/Extend/'.$filepath.'/'.$v;
+				require_once CORE_PATH.'/extend/'.$filepath.'/'.$v;
 			}
 		}
 	}

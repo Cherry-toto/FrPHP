@@ -1,28 +1,28 @@
 <?php
 
 // +----------------------------------------------------------------------
-// | FrPHP { a friendly PHP Framework } 
+// | frphp { a friendly PHP Framework }
 // +----------------------------------------------------------------------
 // | Copyright (c) 2018-2099 http://frphp.jizhicms.com All rights reserved.
 // +----------------------------------------------------------------------
 // | Author: 留恋风 <2581047041@qq.com>
 // +----------------------------------------------------------------------
-// | Date：2018/02
+// | Date：2022/02/28
 // +----------------------------------------------------------------------
 
 
-namespace FrPHP;
+namespace frphp;
 
 // 框架根目录
 defined('CORE_PATH') or define('CORE_PATH', __DIR__);
 
 // 内核版本信息
-const FrPHP_VERSION     =   '3';
+const FrPHP_VERSION     =   '4';
 
 /**
  * FrPHP框架核心
  */
-class FrPHP
+class frphp
 {
     // 配置内容
     protected $config = [];
@@ -77,11 +77,11 @@ class FrPHP
 		define('Tpl_template', $tpl);
 		
 		//引入扩展函数
-		$Extend = scandir(CORE_PATH.'/Extend');
-		//var_dump($Extend);
+		$Extend = scandir(CORE_PATH.'/extend');
+		//var_dump($extend);
 		foreach($Extend as $v){
 			if(strpos($v,'.php')!==false){
-				include  CORE_PATH.'/Extend/'.$v;
+				include  CORE_PATH.'/extend/'.$v;
 			}
 		}
 		
@@ -329,12 +329,10 @@ class FrPHP
     // 检测敏感字符并删除
     public function removeMagicQuotes()
     {
-        if (get_magic_quotes_gpc()) {
-            $_GET = isset($_GET) ? $this->stripSlashesDeep($_GET ) : '';
-            $_POST = isset($_POST) ? $this->stripSlashesDeep($_POST ) : '';
-            $_COOKIE = isset($_COOKIE) ? $this->stripSlashesDeep($_COOKIE) : '';
-            $_SESSION = isset($_SESSION) ? $this->stripSlashesDeep($_SESSION) : '';
-        }
+        $_GET = isset($_GET) ? $this->stripSlashesDeep($_GET ) : '';
+        $_POST = isset($_POST) ? $this->stripSlashesDeep($_POST ) : '';
+        $_COOKIE = isset($_COOKIE) ? $this->stripSlashesDeep($_COOKIE) : '';
+        $_SESSION = isset($_SESSION) ? $this->stripSlashesDeep($_SESSION) : '';
     }
 
     // 检测自定义全局变量并移除。因为 register_globals 已经弃用，如果
@@ -399,11 +397,11 @@ class FrPHP
     protected function classMap()
     {
         return [
-            'FrPHP\lib\Controller' => CORE_PATH . '/lib/Controller.php',
-            'FrPHP\lib\Model' => CORE_PATH . '/lib/Model.php',
-            'FrPHP\lib\View' => CORE_PATH . '/lib/View.php',
-            'FrPHP\db\DBholder' => CORE_PATH . '/db/DBholder.php',
-            'FrPHP\db\Sqlite' => CORE_PATH . '/db/Sqlite.php',
+            'frphp\lib\Controller' => CORE_PATH . '/lib/Controller.php',
+            'frphp\lib\Model' => CORE_PATH . '/lib/Model.php',
+            'frphp\lib\View' => CORE_PATH . '/lib/View.php',
+            'frphp\db\DBholder' => CORE_PATH . '/db/DBholder.php',
+            'frphp\db\Sqlite' => CORE_PATH . '/db/Sqlite.php',
             
         ];
     }
@@ -468,4 +466,4 @@ if(!file_exists(APP_PATH.CONF_PATH.'/config.php')){
 $config = require(APP_PATH .CONF_PATH.'/config.php');
 
 //实例化核心类
-(new FrPHP($config))->run();
+(new frphp($config))->run();
