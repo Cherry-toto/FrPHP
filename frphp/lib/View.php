@@ -46,11 +46,11 @@ class View
 			if(strpos($name,'@')!==false){
 				$controllerLayout =  str_replace('@','',$name);
 			}else{
-				$controllerLayout =  HOME_VIEW.'/'.Tpl_template.'/' . $name . '.html';
+				$controllerLayout =  HOME_VIEW.'/'.Tpl_template.'/' . $name . File_TXT;
 			}
 			
 		}else{
-			$controllerLayout =  HOME_VIEW.'/'.Tpl_template.'/' . strtolower($this->_controller) . '/' . $this->_action . '.html';
+			$controllerLayout =  HOME_VIEW.'/'.Tpl_template.'/' . strtolower($this->_controller) . '/' . $this->_action . File_TXT;
 
 		}
 		//去除可能没有的Tpl_template
@@ -61,7 +61,7 @@ class View
 			$this->template($controllerLayout);
 			
         } else {
-           Error_msg('无法找到视图文件，页面模板：'.$name.'.html');
+           Error_msg('无法找到视图文件，页面模板：'.$name.File_TXT);
         }
 		
 		
@@ -185,7 +185,7 @@ class View
 		if(strpos($filename,'.')!==false){
 			$prefix = '';
 		}else{
-			$prefix = '.html';
+			$prefix = File_TXT;
 		}
 		$includefile = str_replace('//','/',HOME_VIEW.'/'.Tpl_template.'/'. Tpl_common .'/'.$filename. $prefix);
 		if(!is_file($includefile)){
@@ -200,79 +200,6 @@ class View
 		if($a!=$b){
 			Error_msg($this->_cachefile.'模板中存在不完整'.$msg.'标签，请检查是否遗漏{'.$msg.'}开始或结束符');
 		}
-	}
-	
-	//筛选
-	/**
-		输出参数：筛选列表all(item)，链接url，升降序(id,orders,addtime)
-		{screen molds="article" orderby="orders desc" tid="1|2" fields='pingpai,yanse' as="v"}
-	**/
-	public function template_html_screen($f){
-		preg_match_all('/.*?(\s*.*?=.*?[\"|\'].*?[\"|\']\s).*?/si',' '.$f.' ',$aa);
-		$a=array();
-		foreach($aa[1] as $v){
-			$t=explode('=',trim(str_replace(array('"',"'"),'',$v)));
-			$a=array_merge($a,array(trim($t[0]) => trim($t[1])));
-		}
-		if(strpos($a['molds'],'$')!==FALSE){
-			$a['molds']='\'".'.$a['molds'].'."\'';
-		}else{
-			$a['molds'] = " '".$a['molds']."' ";
-		}
-		$molds=$a['molds'];
-		if(isset($a['fields'])){$fields="'".$a['fields']."'";}else{$fields='null';}
-		if($a['as']!=''){$as=$a['as'];}else{$as='v';}
-		if(isset($a['orderby'])){
-			$order="'".$a['orderby']."'";
-		}else{$order="' id desc '";}
-		$tids = '1=1';
-		if(isset($a['tid'])){
-			$arr_tid = array();
-			if(strpos($a['tid'],'|')!==false){
-				foreach(explode('|',$a['tid']) as $v){
-					$arr_tid[]=" (tids like '%,".$v.",%') ";
-				}
-			$tids = ' ( '. implode('or',$arr_tid).' ) ';
-			}else if(strpos($a['tid'],'$')!==false){
-				$tids = " tids like  '%,".trim($a['table'],"'").",%'  ";
-			}else{
-				$tids = " tids like  '%,".$a['tid'].",%'  ";
-			}
-		}
-		$fields = '1=1';
-		if(isset($a['fields'])){
-			if(strpos($a['fields'],',')!==false){
-				$a['fields'] = str_replace(',',"','",$a['fields']);
-			}
-			$fields = " field in ('".$a['fields']."') ";
-		}
-
-		$sql=' fieldtype in(7,8,12) and  isshow=1 and molds='.$molds.'  and '.$tids.' and '.$fields;
-		$txt="<?php
-		\$table ='fields';
-		\$w=\"".$sql."\";
-		\$order=$order;";
-		$as = trim($as,"'");
-		$txt .= "
-		$".$as."_data = M(\$table)->findAll(\$w,\$order);";
-		
-
-		$txt.='$n=0;foreach($'.$as.'_data as $'.$as.'_key=>  $'.$as.'){
-			$n++;
-			$vs=array();
-			$fieldvalue = explode(",",$'.$as.'["body"]);
-			//$rooturl = get_domain()."/screen/index/molds/".$'.$as.'["molds"]."/tid/".$type["id"];
-			$rooturl = get_domain()."/screen-".$'.$as.'["molds"]."-".$type["id"];
-			foreach($fieldvalue as $kk=>$vv){
-				$d=explode("=",$vv);
-				$vs[$kk] = array("key"=>$d[1],"value"=>$d[0],"url"=>$rooturl."-".$'.$as.'["field"]."-".$d[1].change_parse_url($filters,$'.$as.'["field"]));
-			}
-			
-			$'.$as.'["list"] = $vs;
-			$'.$as.'["url"] = $rooturl."-".$'.$as.'["field"]."-0";
-			?>';
-		
-		return $txt;
 	}
 	
 	//foreach全局标签
@@ -299,22 +226,50 @@ class View
 			if(strpos($a['table'],'$')!==FALSE){$a['table']=trim($a['table'],"'");}
 			$db=$a['table'];
 		}else{
-			exit('缺少table参数！');
+			if(!isset($a['tid'])){ exit('缺少table参数！');}
+			if(strpos($a['tid'],'$')!==false){
+				$db = ' $classtypedata['.trim($a['tid'],"'").']["molds"] ';
+			}else{
+				if(strpos($a['tid'],',')!==false){
+					$tids = explode(',',$a['tid']);
+					$db = ' $classtypedata['.trim($tids[0],"'").']["molds"] ';
+				}else{
+					$db = ' $classtypedata['.trim($a['tid'],"'").']["molds"] ';
+				}
+			}
+			
 		}
-		if(isset($a['limit'])){$limit=$a['limit'];}else{$limit='null';}
+		if(isset($a['limit'])){
+			if(strpos($a['limit'],'$')!==false){
+				$limit=trim($a['limit'],"'");
+			}else{
+				$limit=$a['limit'];
+			}
+		}else{$limit='null';}
 		if(isset($a['notempty'])){$notempty=trim($a['notempty'],"'");}else{$notempty=false;}
 		if(isset($a['empty'])){$empty=trim($a['empty'],"'");}else{$empty=false;}
-		if(isset($a['fields'])){$fields=$a['fields'];}else{$fields='null';}
+		if(isset($a['fields'])){
+			if(strpos($a['fields'],'$')!==false){
+				$fields=trim($a['fields'],"'");
+			}else{
+				$fields=$a['fields'];
+			}
+			
+		}else{$fields='null';}
 		if(isset($a['isall'])){$isall=trim($a['isall'],"'");}else{$isall=false;}
 		if(isset($a['as'])){$as=$a['as'];}else{$as='v';}
 		if(isset($a['day'])){$day=$a['day'];}else{$day=false;}
 		if(isset($a['jzpage'])){$jzpage=trim($a['jzpage'],"'");}else{$jzpage='page';}
 		if(isset($a['sql'])){$sql=trim($a['sql'],"'");}else{$sql='';}
+		if(isset($a['jzcache'])){$jzcache=trim($a['jzcache'],"'");}else{$jzcache=false;}
+		if(isset($a['jzcachetime'])){$jzcachetime=trim($a['jzcachetime'],"'");}else{$jzcachetime=30*60;}
 		if(isset($a['orderby'])){
 			$order=$a['orderby'];
 			if(strpos($a['orderby'],'$')!==FALSE){$order=trim($a['orderby'],"'");}
+			//$order=' '.str_replace('|',' ',$order).' ';
 		}else{$order="' id desc '";}
 		if(isset($a['like'])){
+			// like='title|学习,keywords|学习' => title like '%学习%' and keywords like '%学习%';
 			$lk = array();
 			if(strpos($a['like'],',')!==false){
 				$like = explode(',',trim($a['like'],"'"));
@@ -340,6 +295,33 @@ class View
 			}
 			
 		}else{ $lk='';}
+		if(isset($a['notlike'])){
+            $not = array();
+            if(strpos($a['notlike'],',')!==false){
+                $like = explode(',',trim($a['notlike'],"'"));
+                foreach($like as $v){
+                    $s = explode('|',$v);
+                    if(strpos($s[1],'$')!==false){
+                        $not[] = " ".$s[0]." not like \'%'.".trim($s[1]).".'%\' or ".$s[0]." is null  ";
+                    }else{
+                        $not[]= " ".$s[0]." not like \'%".trim($s[1])."%\' or ".$s[0]." is null ";
+                    }
+                    
+                }
+                $notlike = " and ( ". implode(" or ",$not)." )";
+            }else{
+                if(strpos($a['notlike'],'$')!==false){
+                    $like = explode('|',trim($a['notlike'],"'"));
+                    $notlike = " and (".$like[0]." not like \'%'.".trim($like[1]).".'%\' or ".$like[0]." is null) ";
+                }else{
+                    $like = explode('|',trim($a['notlike'],"'"));
+                    $notlike = " and (".$like[0]." not like \'%".trim($like[1])."%\' or ".$like[0]." is null)  ";
+                }
+                
+            }
+        }else{
+		    $notlike = '';
+        }
 		//不在某个参数范围内
 		$notin_sql = '';
 		if(isset($a['notin'])){
@@ -369,21 +351,88 @@ class View
 		if($sql){
 			$sql = " and ('.".$sql.".' ) ";
 		}
-		unset($a['table']);unset($a['orderby']);unset($a['limit']);unset($a['as']);unset($a['like']);unset($a['fields']);unset($a['isall']);unset($a['notin']);unset($a['notempty']);unset($a['empty']);unset($a['day']);unset($a['in']);unset($a['sql']);unset($a['jzpage']);
+		unset($a['table']);unset($a['orderby']);unset($a['limit']);unset($a['as']);unset($a['like']);unset($a['notlike']);unset($a['fields']);unset($a['isall']);unset($a['notin']);unset($a['notempty']);unset($a['empty']);unset($a['day']);unset($a['in']);unset($a['sql']);unset($a['jzpage']);unset($a['jzcache']);unset($a['jzcachetime']);
 		$pages='';
 		$w = ' 1=1 ';
 		$ispage=false;
-		if(stripos($jzpage.'$')!==false){
-			$jzpage = "'.$jzpage.'";
+		if($jzpage!='page'){
+			if(stripos($jzpage,'$')!==false){
+				$jzpage = "'.$jzpage.'";
+			}
+			$pagenum = "\$pagenum = (int)\$_REQUEST['".$jzpage."'] ? (int)\$_REQUEST['".$jzpage."']  : 1; ";
+		}else{
+			$pagenum = "\$pagenum = isset(\$frpage) ? \$frpage : (int)\$_REQUEST['page'];";
 		}
+		
 		foreach($a as $k=>$v){
 			if(strpos($v,'$')===FALSE){
+				//$v = str_ireplace("'",'',$v);
 				$v = trim($v,"'");
 			}
 			
 			if($k=='ispage'){
 				$ispage=true;
-			
+			}else if($k=='tid'){
+				
+				if(strpos($a['tid'],',')!==false){
+					
+					if($isall){
+						$a['tid'] = trim($a['tid'],"'");
+						$tids=explode(',',$a['tid']);
+						$ss = [];
+						foreach($tids as $s){
+							$ss[] = '  tid in(\'.implode(",",$classtypedata['.$s.']["children"]["ids"]).\') ';
+						}
+						$w.=' and ('.implode(' or ',$ss).' ) ';
+					}else{
+						$w.=' and tid in('.trim($a['tid'],"'").') ';
+					}
+					
+					
+				}else{
+					
+					if(strpos($a['tid'],'$')!==false){
+						if($isall){
+							
+							$w.= ' and  tid in(\'.implode(",",$classtypedata['.trim($v,"'").']["children"]["ids"]).\') ';
+						}else{
+							$w.="and tid='.".trim($v,"'").".' ";
+						}
+						
+						
+					}else{
+						
+						if($isall){
+							$w.= ' and  tid in(\'.implode(",",$classtypedata['.trim($v,"'").']["children"]["ids"]).\') ';
+						}else{
+							$w.="and tid=".$v." ";
+						}
+						
+						
+					}
+				}
+				
+			}else if($k=='istop'){
+				$v = (int)$v;
+				$w.=" and jzattr like \'%,1,%\' ";
+			}else if($k=='ishot'){
+				$v = (int)$v;
+				$w.=" and jzattr like \'%,2,%\' ";
+			}else if($k=='istuijian'){
+				$v = (int)$v;
+				$w.=" and jzattr like \'%,3,%\' ";
+			}else if($k=='jzattr'){
+				if(strpos($v,',')!==false){
+					$s = explode(',',$v);
+					$s_sql = [];
+					foreach($s as $ss){
+						$s_sql[]=" jzattr like \'%,".$ss.",%\'  ";
+					}
+					$w.=" and ( ".implode('or',$s_sql)." ) ";
+				}else{
+					$w.=" and jzattr like \'%,".$v.",%\'";
+				}
+				
 			}else{
 				if(strpos($v,'$')!==FALSE){
 					$w.="and ".$k."=\''.".trim($v,"'").".'\' ";
@@ -437,6 +486,7 @@ class View
 		$w .= $in_sql;
 		$w .= $sql;
 		$w.= $lk;
+		$w.= $notlike;
 		$as = trim($as,"'");
 		$txt="<?php
 		\$".$as."_table =$db;
@@ -448,11 +498,12 @@ class View
 		if($ispage){
 			
 			$txt .="
-			\$pagenum = (int)\$_REQUEST['".$jzpage."'] ? (int)\$_REQUEST['".$jzpage."']  : 1; 
+			".$pagenum."
 			\$".$as."_page = new frphp\Extend\Page(\$".$as."_table);
-			\$".$as."_page->typeurl = 'tpl';
+			\$".$as."_page->sep = '?".$jzpage."=';
+			\$".$as."_page->paged = '".$jzpage."';
 			\$".$as."_data = \$".$as."_page->where(\$".$as."_w)->fields(\$".$as."_fields)->orderby(\$".$as."_order)->limit(\$".$as."_limit)->page(\$pagenum)->go();
-			\$".$as."_pages = \$".$as."_page->pageList(3,'?".$jzpage."=');
+			\$".$as."_pages = \$".$as."_page->pageList();
 			\$".$as."_sum = \$".$as."_page->sum;
 			\$".$as."_listpage = \$".$as."_page->listpage;
 			\$".$as."_prevpage = \$".$as."_page->prevpage;
@@ -460,13 +511,21 @@ class View
 			\$".$as."_allpage = \$".$as."_page->allpage;";
 		}else{
 			
-			$txt .= "
-			$".$as."_data = M(\$".$as."_table)->findAll(\$".$as."_w,\$".$as."_order,\$".$as."_fields,\$".$as."_limit);";
+			if($jzcache){
+				$txt .= "
+				\$cachestr = md5(\$".$as."_table.\$".$as."_w.\$".$as."_order.\$".$as."_fields.\$".$as."_limit);
+				$".$as."_data = getCache(\$cachestr);
+				if(!$".$as."_data){
+					$".$as."_data = M(\$".$as."_table)->findAll(\$".$as."_w,\$".$as."_order,\$".$as."_fields,\$".$as."_limit);
+					setCache(\$cachestr,$".$as."_data,$jzcachetime);
+				}";
+			}else{
+				$txt .= "
+				$".$as."_data = M(\$".$as."_table)->findAll(\$".$as."_w,\$".$as."_order,\$".$as."_fields,\$".$as."_limit);";
+			}
 			
 		}
-		$txt.='$'.$as.'_n=0;foreach($'.$as.'_data as $'.$as.'_key=> $'.$as.'){
-			$'.$as.'_n++;
-			?>';
+		$txt.=' ?>';
 		
 		return $txt;
 		

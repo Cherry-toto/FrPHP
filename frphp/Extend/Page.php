@@ -30,13 +30,12 @@ namespace frphp\extend;
 		public $limit_t = 0;
 		//当前页码
 		public $currentPage = 1;
-		//间隔条数
-		public $pv = 3;
+		//分页页码数
+		public $pv = 5;
 		//系统分页链接
 		public $url = '';
 		//分页分隔符
-		public $sep = '/page/';
-		public $paged = 'page';
+		public $sep = '?page=';
 		//SQL
 		public $sql = null;
 		//排序
@@ -49,88 +48,38 @@ namespace frphp\extend;
 		public $listpage = array();
 		//分页url设置
 		public $typeurl = '';
-		//是否需要后缀File_TXT
-		public $file_ext = '.html';
-		
-		
+
 		
 		public function __construct($table=''){
 			
 			$this->table = $table;
-
+			
 		}
 		
 		
 		public function getUrl(){
 			$request_uri = $_SERVER["REQUEST_URI"];    
             if(strpos($request_uri,APP_URL)!==false){
-				//后台
-				$this->file_ext = '';
-				$this->sep = '?page=';
-				if(isset($_GET['page'])){
-					unset($_GET['page']);
-				}
-				$url = get_domain().APP_URL.'/'.APP_CONTROLLER.'/'.APP_ACTION;
-				if(count($_GET)>0){
-					$this->sep = '&page=';
-					$url = get_domain().APP_URL.'/'.APP_CONTROLLER.'/'.APP_ACTION.'?'.http_build_query($_GET);
-				}
+				$app_url = '/'.APP_URL.'/';
 			}else{
-			
-				switch($this->typeurl){
-					case 'screen':
-					$url = get_domain().'/screen-'.$_GET['molds'].'-'.$_GET['tid'].'-'.$_GET['jz_screen']; 
-						if(strpos($url,'page')!==false){
-							$urls = explode('-page-',$url);
-							$url = $urls[0];
-						}
-					break;
-					case 'tpl':
-						$this->file_ext = '';
-						$url = str_ireplace('.html','',$request_uri);
-						if(strpos($url,'?')!==false){
-							$urls = explode('?',$url);
-							$url = $urls[0];
-						}
-						
-						
-					break;
-					case 'search':
-						$this->file_ext = '';
-						$param = $_REQUEST;
-						if(isset($param['page'])){
-							unset($param['page']);
-						}
-                        unset($param['PHPSESSID']);
-						unset($param['ajax']);
-						unset($param['ajax_tpl']);
-						$urlparse = parse_url($request_uri);
-						$url = get_domain().$urlparse['path'].'?'.http_build_query($param);
-						
-					break;
-					default:
-						
-						$url = str_ireplace('.html','',$request_uri);
-						
-					
-					break;
-					
-				}
-				
-				if($this->typeurl!='search'){
-					$position = strpos($url, '?');
-					$url = $position === false ? $url : substr($url, 0, $position);
-					$url = (strripos($url,'/')+1 == strlen($url)) ? substr($url,0,strripos($url,'/')) : $url; 
-				}
+				$app_url = '/';
 			}
-			
+			$this->sep = '?page=';
+			if(isset($_GET['page'])){
+				unset($_GET['page']);
+			}
+			$url = WWW.$_SERVER['REDIRECT_URL'];
+			if(count($_GET)>0){
+				$this->sep = '&page=';
+				$url .= '?'.http_build_query($_GET);
+			}
 			
 			
 			return $url;
             
 		}
 		
-		public function pageList($pv=5,$sep=false){
+		public function pageList(){
 			/**
 				首页url  		home
 				上一页url		prev
@@ -140,8 +89,7 @@ namespace frphp\extend;
 				当前页码		current_num
 				普通页码组      list
 				最后一页url		last
-			
-			
+
 			**/
 			$listpage = array(
 				'home' => null,
@@ -154,8 +102,6 @@ namespace frphp\extend;
 				'last' => null,
 			);
 			
-			$this->pv = $pv;
-			$this->sep = ($sep==false) ? ($this->sep) : $sep;
 			$url = $this->getUrl();
 			if( strpos($url,$this->sep)!==false && $this->currentPage!=1){
 				$urls = explode($this->sep,$url);
@@ -169,77 +115,45 @@ namespace frphp\extend;
 			$this->url = $url;
 			$list = '';
 			$request_uri = $_SERVER["REQUEST_URI"];    
-            if(strpos($request_uri,APP_URL)!==false){
-				$file_ext = '';
-			}else{
-				$file_ext = File_TXT_HIDE ? '' : $this->file_ext;
-				if($file_ext=='' && $this->typeurl==''){
-					$file_ext = CLASS_HIDE_SLASH ? $file_ext : $file_ext.'/';
-				}
-				if(strpos($url,'?')===false){
-					$param = $_REQUEST;
-                    unset($param['PHPSESSID']);
-					if(isset($param['page'])){
-						unset($param['page']);
-					}
-					unset($param['ajax']);
-					unset($param['ajax_tpl']);
-					unset($param['s']);
-					if($this->typeurl=='screen'){
-						unset($param['tid']);
-						unset($param['jz_screen']);
-						unset($param['molds']);
-					}
-					if($this->typeurl=='tpl'){
-						if(isset($param[$this->paged])){
-							unset($param[$this->paged]);
-						}
-					}
-					if(count($param)){
-						if(strpos($this->sep,'?')!==false){
-							$file_ext.='&'.http_build_query($param);
-						}else{
-							$file_ext.='?'.http_build_query($param);
-						}
-					}
-					
-				}
-			}
+           
 			
-			
-			$listpage['home'] = $this->url.$file_ext;
-			$start = $this->currentPage-$this->pv;
-			$start = $start<1 ? 1 : $start;
-			$end = $this->currentPage+$this->pv;
-			$end = $end>$this->allpage ? $this->allpage : $end;
-			while($start<=$end){
-				$urlx = $start==1 ? $this->url.$file_ext : $this->url.$this->sep.$start.$file_ext;
-				if($start==$this->currentPage){
-					$list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
-					$listpage['current'] = $urlx;
-					$listpage['current_num'] = $this->currentPage;
-				}else{
-					$list .= '<li><a href="'.$urlx.'" data-page="'.$start.'">'.$start.'</a></li>';
-				}
-				
-				$listpage['list'][] = array('url'=>$urlx,'num'=>$start);
-				$start++;
-			}
+			$listpage['home'] = $this->url;
+			$num = floor($this->pv/2);
+            $start = $this->currentPage-$num;
+            $start = ($this->currentPage+$num) > $this->allpage ? ($this->allpage-$this->pv+1) : $start;
+            $start = $start<1 ? 1 : $start;
+            
+            $end = $this->currentPage+$num;
+            $end = $end>$this->allpage ? $this->allpage : $end;
+            $end = $start<$num ? ($this->pv>=$this->allpage ? $this->allpage : $this->pv) : $end;
+            while($start<=$end){
+                $urlx = $start==1 ? $this->url : $this->url.$this->sep.$start;
+                if($start==$this->currentPage){
+                    $list.='<li class="active" ><a >'.$this->currentPage.'</a></li>';
+                    $listpage['current'] = $urlx;
+                    $listpage['current_num'] = $this->currentPage;
+                }else{
+                    $list .= '<li><a href="'.$urlx.'" data-page="'.$start.'">'.$start.'</a></li>';
+                }
+                
+                $listpage['list'][] = array('url'=>$urlx,'num'=>$start);
+                $start++;
+            }
 			$listpage['allpage'] = $this->allpage;
-			$prev_url = $this->currentPage==1 ? '' : $this->url.$this->sep.($this->currentPage-1).$file_ext;
+			$prev_url = $this->currentPage==1 ? '' : $this->url.$this->sep.($this->currentPage-1);
 			$prev = '<li><a href="'.$prev_url.'" class="layui-laypage-prev" data-page="'.($this->currentPage-1).'"><em>&lt;</em></a></li>';
 			
 			if($this->currentPage!=1){
-				$this->prevpage = $this->url.$this->sep.($this->currentPage-1).$file_ext;
+				$this->prevpage = $this->url.$this->sep.($this->currentPage-1);
 			}
-			$next = '<li><a href="'.$this->url.$this->sep.($this->currentPage+1).$file_ext.'" class="layui-laypage-next" data-page="'.($this->currentPage+1).'"><em>&gt;</em></a></li>';
+			$next = '<li><a href="'.$this->url.$this->sep.($this->currentPage+1).'" class="layui-laypage-next" data-page="'.($this->currentPage+1).'"><em>&gt;</em></a></li>';
 			
 			if($this->currentPage != $this->allpage && $this->allpage>1){
-			$this->nextpage = $this->url.$this->sep.($this->currentPage+1).$file_ext;	
+			$this->nextpage = $this->url.$this->sep.($this->currentPage+1);	
 			}
 			
 			$all = '<li><a href="javascript:;" data-page="'.$this->currentPage.'">总共'.$this->currentPage.'/'.$this->allpage.'</a></li>';
-			$last_url = $this->allpage==1 ? $this->url.$file_ext : $this->url.$this->sep.$this->allpage.$file_ext;
+			$last_url = $this->allpage==1 ? $this->url : $this->url.$this->sep.$this->allpage;
 			$last = '<li><a href="'.$last_url.'" class="layui-laypage-prev" data-page="'.$this->allpage.'"><em>尾页</em></a></li>';
 			
 			$ext = '<div class="pagination"><ul>';

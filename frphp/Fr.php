@@ -17,7 +17,7 @@ namespace frphp;
 defined('CORE_PATH') or define('CORE_PATH', __DIR__);
 
 // 内核版本信息
-const FrPHP_VERSION     =   '4';
+const FrPHP_VERSION     =   '5';
 
 /**
  * FrPHP框架核心
@@ -36,7 +36,9 @@ class frphp
 		defined('APP_DEBUG') or define('APP_DEBUG', isset($config['APP_DEBUG']) ? $config['APP_DEBUG'] : $MyConfig['APP_DEBUG']);
 		defined('Tpl_style') or define('Tpl_style', isset($config['Tpl_style']) ? $config['Tpl_style'] : $MyConfig['Tpl_style']);
 		defined('Tpl_common') or define('Tpl_common', isset($config['Tpl_common']) ? $config['Tpl_common'] : $MyConfig['Tpl_common']);
-		defined('APP_HOME') or define('APP_HOME', isset($config['APP_HOME']) ? $config['APP_HOME'] : $MyConfig['APP_HOME']);
+        defined('APP_MUTI') or define('APP_MUTI', isset($config['APP_MUTI']) ? $config['APP_MUTI'] : $MyConfig['APP_MUTI']);
+        defined('APP_HOME') or define('APP_HOME', isset($config['APP_HOME']) ? $config['APP_HOME'] : $MyConfig['APP_HOME']);
+        defined('APP_MODEL') or define('APP_MODEL', isset($config['APP_MODEL']) ? $config['APP_MODEL'] : $MyConfig['APP_MODEL']);
 		defined('HOME_MODEL') or define('HOME_MODEL', isset($config['HOME_MODEL']) ? $config['HOME_MODEL'] : $MyConfig['HOME_MODEL']);
 		defined('HOME_CONTROLLER') or define('HOME_CONTROLLER', isset($config['HOME_CONTROLLER']) ? $config['HOME_CONTROLLER'] : $MyConfig['HOME_CONTROLLER']);
 		defined('HOME_VIEW') or define('HOME_VIEW', isset($config['HOME_VIEW']) ? $config['HOME_VIEW'] : $MyConfig['HOME_VIEW']);
@@ -75,7 +77,7 @@ class frphp
 			$tpl = PC_VIEW;
 		}
 		define('Tpl_template', $tpl);
-		
+		define('WWW',get_domain());
 		//引入扩展函数
 		$Extend = scandir(CORE_PATH.'/extend');
 		//var_dump($extend);
@@ -217,26 +219,48 @@ class frphp
             // 使用“/”分割字符串，并保存在数组中
             $urlArray = explode('/', $url);
             // 删除空的数组元素
-            //$urlArray = array_filter($urlArray);
 			foreach($urlArray as $k=>$v){
 				if($v!=''){
 					$urlArray[$k] = $v;
 				}
 			}
-			// 获取控制器名
-			$controllerName = ucfirst($urlArray[0]);
-			// 获取动作名
-			array_shift($urlArray);
-	  
-            $actionName = $urlArray ? $urlArray[0] : $actionName;
-            
-            // 获取URL参数
-            array_shift($urlArray);
-            $param = $urlArray ? $urlArray : array();
-			
+            if(APP_MUTI){
+
+                if(file_exists(APP_PATH.APP_HOME.'/'.strtolower($urlArray[0])) || file_exists(APP_PATH.APP_HOME.'/'.ucfirst($urlArray[0])) || file_exists(APP_PATH.APP_HOME.'/'.strtoupper($urlArray[0]))){
+                    define('APP_HOME_MODEL',$urlArray[0]);
+                    $controllerName = ucfirst($urlArray[1]);
+                    array_shift($urlArray);
+                    array_shift($urlArray);
+                }else{
+                    define('APP_HOME_MODEL',APP_MODEL);
+                    $controllerName = ucfirst($urlArray[0]);
+                    array_shift($urlArray);
+                }
+				// 获取动作名
+                $actionName = $urlArray ? $urlArray[0] : $actionName;
+                // 获取URL参数
+                array_shift($urlArray);
+                $param = $urlArray ? $urlArray : array();
+            }else{
+                $controllerName = ucfirst($urlArray[0]);
+                // 获取动作名
+                array_shift($urlArray);
+                $actionName = $urlArray ? $urlArray[0] : $actionName;
+                // 获取URL参数
+                array_shift($urlArray);
+                $param = $urlArray ? $urlArray : array();
+            }
+
         }else{
+			if(APP_MUTI){
+				define('APP_HOME_MODEL',APP_MODEL);
+				$defaultcontrollerpath = APP_PATH.APP_HOME.'/'.APP_HOME_MODEL.'/'.HOME_CONTROLLER.'/'.$controllerName.'Controller.php';
+			}else{
+				$defaultcontrollerpath = APP_PATH.APP_HOME.'/'.HOME_CONTROLLER.'/'.$controllerName.'Controller.php';
+			}
+			
         	//表示第一次安装或者进入默认控制器，默认方法
-        	if(!file_exists(APP_PATH.APP_HOME.'/'.HOME_CONTROLLER.'/'.$controllerName.'Controller.php')){
+        	if(!file_exists($defaultcontrollerpath)){
         		$res = mkdir(APP_PATH.APP_HOME,0777,true);
         		if(!$res){
 					exit('根目录没有创建文件夹权限，请手动创建'.APP_PATH.APP_HOME.'项目文件夹目录！');
@@ -249,9 +273,14 @@ class frphp
         	
         }
 
+        //多模块的时候加入模块文件夹
+        if(APP_MUTI){
+            $controller = APP_HOME.'\\'.APP_HOME_MODEL.'\\'.HOME_CONTROLLER.'\\'. $controllerName . 'Controller';
+        }else{
+            $controller = APP_HOME.'\\'.HOME_CONTROLLER.'\\'. $controllerName . 'Controller';
+        }
         // 判断控制器和操作是否存在
-		$controller = APP_HOME.'\\'.HOME_CONTROLLER.'\\'. $controllerName . 'Controller';
-		if (!class_exists($controller)) {
+        if (!class_exists($controller)) {
 			Error_msg($controller.'控制器不存在！');
         }
         if(!method_exists($controller, $actionName)){

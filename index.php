@@ -1,7 +1,7 @@
 <?php
 
 // +----------------------------------------------------------------------
-// | FrPHP { a friendly PHP Framework } 
+// | frphp { a friendly PHP Framework }
 // +----------------------------------------------------------------------
 // | Copyright (c) 2018-2099 http://frphp.jizhicms.com All rights reserved.
 // +----------------------------------------------------------------------
@@ -44,7 +44,7 @@ define('StopLog',false);
 define('Tpl_style',APP_PATH.'static/');
 
 // 加载框架文件
-require(APP_PATH . 'FrPHP/Fr.php');
+require(APP_PATH . 'frphp/fr.php');
 
 // 就这么简单~
 

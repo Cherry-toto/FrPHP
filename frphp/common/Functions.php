@@ -34,7 +34,11 @@ function M($name=null) {
 		return '缺少模型类！';
 	}else{
 		$table = $name;
-		$name = APP_HOME.'\\'.HOME_MODEL.'\\'.$name.'Model';
+		if(APP_MUTI){
+			$name = APP_HOME.'\\'.APP_HOME_MODEL.'\\'.HOME_MODEL.'\\'.$name.'Model';
+		}else{
+			$name = APP_HOME.'\\'.HOME_MODEL.'\\'.$name.'Model';
+		}
 		if(!class_exists($name)){
 			$path = 'frphp\\lib\\Model';
 			return $path::getInstance($table);
