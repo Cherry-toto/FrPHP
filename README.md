@@ -3,7 +3,7 @@
 <p align="center">一个PHP语言开发的简单MVC框架</p>
 
 <p align="center">
-<img src="https://img.shields.io/badge/frphp-v4.0-important.svg" title="frphp" />
+<img src="https://img.shields.io/badge/frphp-v5.0-important.svg" title="frphp" />
 <img src="https://img.shields.io/badge/PHP-5.6+-blue.svg" title="PHP" />
 <img src="https://img.shields.io/badge/MySQL-4.8+-red.svg" title="MySQL" />
 </p>
